@@ -1,0 +1,110 @@
+{% extends "myapp/base.html" %}
+
+{% block title %}Add New Food - Calorie Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="text-center mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Food Item
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Quick Tips -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Quick Tips:</h5>
+                        <ul class="mb-0">
+                            <li>Enter accurate nutritional information for better tracking</li>
+                            <li>Check if the food item already exists before adding</li>
+                            <li>Use reliable sources for nutritional values</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Food Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="carbs" class="form-label">Carbohydrates (g)</label>
+                                <input type="number" class="form-control" id="carbs" name="carbs" step="0.1" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="protein" class="form-label">Protein (g)</label>
+                                <input type="number" class="form-control" id="protein" name="protein" step="0.1" min="0" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fats" class="form-label">Fats (g)</label>
+                                <input type="number" class="form-control" id="fats" name="fats" step="0.1" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="calories" class="form-label">Calories (kcal)</label>
+                                <input type="number" class="form-control" id="calories" name="calories" step="1" min="0" required>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>Add Food Item
+                            </button>
+                            <a href="{% url 'index' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Display existing food items -->
+            <div class="card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="text-center mb-0">
+                        <i class="fas fa-list me-2"></i>Existing Food Items
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Carbs (g)</th>
+                                    <th>Protein (g)</th>
+                                    <th>Fats (g)</th>
+                                    <th>Calories (kcal)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for food in foods %}
+                                <tr>
+                                    <td>{{ food.name }}</td>
+                                    <td>{{ food.carbs }}</td>
+                                    <td>{{ food.protein }}</td>
+                                    <td>{{ food.fats }}</td>
+                                    <td>{{ food.calories }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

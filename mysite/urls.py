@@ -20,9 +20,14 @@ from myapp import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name="index"),
+    path('', views.dashboard, name="dashboard"),
+    path('track/', views.index, name="index"),
     path('delete/<int:id>/', views.delete_consume, name="delete"),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     path('signup/', views.signup, name='signup'),
+    path('add-food/', views.add_food, name='add_food'),
+    path('add-meal/', views.add_meal, name='add_meal'),
+    path('log-weight/', views.log_weight, name='log_weight'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
 ]

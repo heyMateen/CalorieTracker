@@ -1,0 +1,365 @@
+{% extends "myapp/base.html" %}
+{% block title %}Dashboard - Calorie Tracker{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Top Stats Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="stats-icon bg-primary text-white rounded-circle p-3">
+                                <i class="fas fa-fire fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Daily Calories</h6>
+                            <h3 class="mb-0">{{ daily_calories }} / {{ user_profile.daily_calorie_goal }}</h3>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary" role="progressbar" 
+                             style="width: {{ calorie_percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="stats-icon bg-success text-white rounded-circle p-3">
+                                <i class="fas fa-weight fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Current Weight</h6>
+                            <h3 class="mb-0">{{ latest_weight.weight|default:"--" }} kg</h3>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">
+                        {% if current_bmi %}
+                            BMI: <strong>{{ current_bmi }}</strong>
+                            <span class="badge {% if bmi_category == 'Normal' %}bg-success{% elif bmi_category == 'Underweight' %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ bmi_category }}
+                            </span>
+                        {% else %}
+                            BMI: -- <small><a href="{% url 'edit_profile' %}" class="text-primary">(Set your height to calculate BMI)</a></small>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="stats-icon bg-warning text-white rounded-circle p-3">
+                                <i class="fas fa-bullseye fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Goal</h6>
+                            <h3 class="mb-0 text-capitalize">{{ user_profile.weight_goal }}</h3>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">Activity: {{ user_profile.get_activity_level_display }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="stats-icon bg-info text-white rounded-circle p-3">
+                                <i class="fas fa-chart-line fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Weekly Average</h6>
+                            <h3 class="mb-0">{{ weekly_avg_calories }} kcal</h3>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-0">Past 7 days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">Calorie Intake History</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="calorieHistory" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">Today's Nutrients</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="nutrientsPie" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meals Section -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Today's Meals</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMealModal">
+                        <i class="fas fa-plus me-1"></i> Add Meal
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="accordion" id="mealsAccordion">
+                        {% for meal_type, foods in daily_meals.items %}
+                        <div class="accordion-item border-0">
+                            <h2 class="accordion-header" id="heading{{ meal_type }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapse{{ meal_type }}">
+                                    {{ meal_type|title }}
+                                    <span class="badge bg-primary ms-2">{{ foods|length }} items</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ meal_type }}" class="accordion-collapse collapse"
+                                 data-bs-parent="#mealsAccordion">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless align-middle">
+                                            {% for food in foods %}
+                                            <tr>
+                                                <td>{{ food.food_consumed.name }}</td>
+                                                <td>{{ food.food_consumed.calories }} kcal</td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-outline-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Weight Tracking</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addWeightModal">
+                        <i class="fas fa-plus me-1"></i> Log Weight
+                    </button>
+                </div>
+                <div class="card-body">
+                    <canvas id="weightHistory" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Meal Modal -->
+<div class="modal fade" id="addMealModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Meal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'add_meal' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Meal Type</label>
+                        <select class="form-select" name="meal_type" required>
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Food Item</label>
+                        <select class="form-select" name="food_consumed" required>
+                            {% for food in foods %}
+                            <option value="{{ food.id }}">{{ food.name }} ({{ food.calories }} kcal)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Servings</label>
+                        <input type="number" class="form-control" name="servings" value="1" step="0.1" min="0.1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Meal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Weight Modal -->
+<div class="modal fade" id="addWeightModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Weight</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'log_weight' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" class="form-control" name="weight" step="0.1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" name="date" value="{{ today|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Calorie History Chart
+const calorieHistoryCtx = document.getElementById('calorieHistory').getContext('2d');
+new Chart(calorieHistoryCtx, {
+    type: 'line',
+    data: {
+        labels: {{ calorie_history_dates|safe }},
+        datasets: [{
+            label: 'Calories',
+            data: {{ calorie_history_values|safe }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1,
+            fill: true,
+            backgroundColor: 'rgba(75, 192, 192, 0.1)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    display: false
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Nutrients Pie Chart
+const nutrientsCtx = document.getElementById('nutrientsPie').getContext('2d');
+new Chart(nutrientsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Carbs', 'Protein', 'Fats'],
+        datasets: [{
+            data: [{{ daily_carbs }}, {{ daily_protein }}, {{ daily_fats }}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// Weight History Chart
+const weightHistoryCtx = document.getElementById('weightHistory').getContext('2d');
+new Chart(weightHistoryCtx, {
+    type: 'line',
+    data: {
+        labels: {{ weight_history_dates|safe }},
+        datasets: [{
+            label: 'Weight (kg)',
+            data: {{ weight_history_values|safe }},
+            borderColor: 'rgb(153, 102, 255)',
+            tension: 0.1,
+            fill: true,
+            backgroundColor: 'rgba(153, 102, 255, 0.1)'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                grid: {
+                    display: false
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
