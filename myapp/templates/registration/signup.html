@@ -1,0 +1,57 @@
+{% extends "myapp/base.html" %}
+
+{% block title %}Sign Up - Calorie Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Sign Up</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_username">Username</label>
+                            <input type="text" name="username" class="form-control" id="id_username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_email">Email</label>
+                            <input type="email" name="email" class="form-control" id="id_email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_password1">Password</label>
+                            <input type="password" name="password1" class="form-control" id="id_password1" required>
+                            <small class="form-text text-muted">
+                                Your password must contain at least 8 characters and can't be entirely numeric.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_password2">Confirm Password</label>
+                            <input type="password" name="password2" class="form-control" id="id_password2" required>
+                        </div>
+                        {% if form.errors %}
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <div class="alert alert-danger">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary btn-block mt-4">Sign Up</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
