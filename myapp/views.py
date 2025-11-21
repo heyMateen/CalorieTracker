@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.db.models import Sum
-from .models import Food, Consume, UserProfile, WeightLog
+from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES
 from .forms import SignUpForm
 from django.db.models.functions import TruncDate
 
@@ -123,7 +123,7 @@ def dashboard(request):
     
     # Get meals by type
     daily_meals = {}
-    for meal_type, _ in Food.MEAL_TYPE_CHOICES:
+    for meal_type, _ in MEAL_TYPE_CHOICES:
         daily_meals[meal_type] = Consume.objects.filter(
             user=request.user,
             date_consumed=today,
