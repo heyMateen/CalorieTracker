@@ -16,10 +16,10 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 @require_premium
-def advanced_nutrition_analysis(request):
+def meal_planner_example(request):
     """
-    Premium Feature: Advanced nutrition analysis with AI-powered insights
-    
+    Premium Feature Example: Smart Meal Planner
+
     This view requires the user to have an active premium subscription.
     If not, they'll be redirected to the subscription plans page.
     """
@@ -30,17 +30,18 @@ def advanced_nutrition_analysis(request):
     from django.utils import timezone
     from datetime import timedelta
     
-    last_7_days = Consume.objects.filter(
+    today = timezone.now().date()
+    todays_meals = Consume.objects.filter(
         user=request.user,
-        date_consumed__gte=timezone.now().date() - timedelta(days=7)
+        date_consumed=today
     )
     
     context = {
-        'weekly_data': last_7_days,
+        'todays_meals': todays_meals,
         'premium_feature': True,
     }
     
-    return render(request, 'premium/advanced_analysis.html', context)
+    return render(request, 'myapp/meal_planner.html', context)
 
 
 # ============================================================
@@ -155,10 +156,10 @@ HTML Example:
     {% if user.userprofile.is_premium_active %}
         <!-- Premium user content -->
         <div class="premium-feature">
-            <h2>Advanced Analytics</h2>
-            <p>Premium until: {{ user.userprofile.premium_until|date:"F d, Y" }}</p>
-            <!-- Show premium features -->
-        </div>
+                <h2>Smart Meal Planner</h2>
+                <p>Premium until: {{ user.userprofile.premium_until|date:"F d, Y" }}</p>
+                <!-- Show premium features -->
+            </div>
     {% else %}
         <!-- Free user content -->
         <div class="upgrade-prompt">
@@ -287,13 +288,7 @@ def give_trial_period(user, days=7):
        <!-- Free content -->
    {% endif %}
 
-4. Common premium features to add:
-   - Advanced meal planning
-   - AI nutrition insights
-   - Recipe management
-   - Detailed analytics & charts
-   - Custom goal setting
-   - Priority support
-   - Export data
-   - Sync with wearables
+4. Common premium features to add (example):
+    - Smart Meal Planner
+    - Priority support
 """

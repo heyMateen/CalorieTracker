@@ -1,0 +1,12 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Advanced Analytics - Removed{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="alert alert-info">
+        <strong>Note:</strong> Advanced Analytics has been removed. The application now offers a single premium feature: <em>Smart Meal Planner</em>.
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+{% endblock %}

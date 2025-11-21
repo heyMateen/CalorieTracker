@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -14,7 +14,6 @@ from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, Su
 from .forms import SignUpForm
 from django.db.models.functions import TruncDate
 from .subscription import (
-    require_premium,
     create_stripe_checkout_session,
     retrieve_checkout_session,
     process_successful_payment,
@@ -479,3 +478,54 @@ def stripe_webhook(request):
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
         return JsonResponse({'status': 'error'}, status=500)
+
+
+# ============================================================
+# PREMIUM FEATURES - EXAMPLES
+# ============================================================
+
+
+@login_required
+def meal_planner(request):
+    """
+    Meal planning tools - accessible to all logged-in users
+    """
+    today = timezone.now().date()
+    user_profile = request.user.userprofile
+    
+    # Get meals from today
+    today_meals = Consume.objects.filter(
+        user=request.user,
+        date_consumed=today
+    ).select_related('food_consumed').order_by('meal_type')
+    
+    # Add computed calories for each meal
+    for meal in today_meals:
+        meal.computed_calories = meal.food_consumed.calories * meal.servings
+    
+    # Calculate nutrition summary
+    nutrition_summary = Consume.objects.filter(
+        user=request.user,
+        date_consumed=today
+    ).aggregate(
+        total_calories=Sum('food_consumed__calories'),
+        total_protein=Sum('food_consumed__protein'),
+        total_carbs=Sum('food_consumed__carbs'),
+        total_fats=Sum('food_consumed__fats')
+    )
+    
+    # Calculate calorie progress percentage
+    total_calories = nutrition_summary.get('total_calories') or 0
+    calorie_percentage = min((total_calories / user_profile.daily_calorie_goal * 100), 100) if user_profile.daily_calorie_goal > 0 else 0
+    
+    context = {
+        'user_profile': user_profile,
+        'today': today,
+        'today_meals': today_meals,
+        'nutrition_summary': nutrition_summary,
+        'calorie_percentage': calorie_percentage,
+        'meal_types': MEAL_TYPE_CHOICES,
+        'all_foods': Food.objects.all().order_by('name'),
+    }
+    
+    return render(request, 'myapp/meal_planner.html', context)

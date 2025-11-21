@@ -120,9 +120,8 @@ CalorieTracker/
 from myapp.subscription import require_premium
 
 @require_premium
-def advanced_analytics(request):
+def meal_planner(request):
     # This view is now premium-only
-    # Non-premium users are auto-redirected to /subscription/plans/
     pass
 ```
 

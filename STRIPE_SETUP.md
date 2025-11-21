@@ -254,7 +254,7 @@ def advanced_nutrition_analysis(request):
 ```html
 {% if user.userprofile.is_premium_active %}
     <p>You have premium access until {{ user.userprofile.premium_until|date:"F d, Y" }}</p>
-    <a href="{% url 'advanced_analytics' %}">View Advanced Analytics</a>
+    <a href="{% url 'meal_planner' %}">Open Smart Meal Planner</a>
 {% else %}
     <p>Upgrade to premium to unlock advanced features!</p>
     <a href="{% url 'subscription_plans' %}" class="btn btn-primary">

@@ -3,9 +3,78 @@
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .locked-feature {
+        position: relative;
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    .locked-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        z-index: 10;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .premium-banner {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        color: black;
+        box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+    }
+    .premium-banner h5 {
+        color: black;
+        font-weight: bold;
+    }
+    .feature-card.premium {
+        border: 2px solid #FFD700;
+        position: relative;
+    }
+    /* Meal Planner banner styling */
+    .meal-planner-banner {
+        background: linear-gradient(90deg, #FFF3B0 0%, #FFD666 50%, #FFDF80 100%);
+        border-radius: 12px;
+        padding: 14px 18px;
+        box-shadow: 0 6px 18px rgba(255, 215, 0, 0.12);
+        color: #1f1f1f;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .meal-planner-banner h5 {
+        margin-bottom: 0;
+        font-weight: 600;
+    }
+    .meal-planner-banner p { margin-bottom: 0; color: rgba(0,0,0,0.7); }
+</style>
 {% endblock %}
 
 {% block content %}
+<!-- Premium Status Banner -->
+<!-- Top CTA: Smart Meal Planner (single premium feature) -->
+<div class="meal-planner-banner">
+    <div class="d-flex align-items-center">
+        <h5 class="mb-0 me-3"><i class="fas fa-utensils"></i> Smart Meal Planner</h5>
+        <p class="mb-0">Create smart daily meal plans and get real-time nutrition previews</p>
+    </div>
+    <div>
+        <a href="{% url 'meal_planner' %}" class="btn btn-dark btn-lg" style="font-weight:600;">
+            <i class="fas fa-utensils me-1"></i> Open Meal Planner
+        </a>
+    </div>
+</div>
+
 <div class="container-fluid py-4">
     <!-- Top Stats Cards Row -->
     <div class="row g-4 mb-4">
@@ -176,6 +245,28 @@
                 </div>
                 <div class="card-body">
                     <canvas id="weightHistory" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Single Premium Feature Card -->
+    <div class="row g-4 mt-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm feature-card premium p-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-utensils fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Smart Meal Planner</h5>
+                            <p class="mb-0 text-muted">Create smart daily meal plans and get real-time nutrition previews.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'meal_planner' %}" class="btn btn-primary">Open Meal Planner</a>
+                    </div>
                 </div>
             </div>
         </div>

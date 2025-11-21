@@ -1,0 +1,233 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Meal Planner{% endblock %}
+
+{% block extra_head %}
+<style>
+    .premium-section {
+        border: 2px solid #FFD700;
+        border-radius: 15px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,165,0,0.05) 100%);
+        margin-bottom: 20px;
+    }
+    .meal-slot {
+        background: white;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .meal-item {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .nutrition-info {
+        display: inline-block;
+        background: #e9ecef;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4">
+        <i class="fas fa-utensils text-primary"></i> Smart Meal Planner
+    </h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Today's Nutrition Summary -->
+            <div class="premium-section">
+                <h3 class="mb-3"><i class="fas fa-gem"></i> Today's Nutrition Summary</h3>
+                
+                <div class="row text-center mb-4">
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Total Calories</h6>
+                                <h3 class="text-primary">{{ nutrition_summary.total_calories|default:"0" }}</h3>
+                                <small class="text-muted">/ {{ user_profile.daily_calorie_goal }} kcal</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Protein</h6>
+                                <h3 class="text-success">{{ nutrition_summary.total_protein|default:"0"|floatformat:"0" }}g</h3>
+                                <small class="text-muted">Macronutrient</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Carbs</h6>
+                                <h3 class="text-warning">{{ nutrition_summary.total_carbs|default:"0"|floatformat:"0" }}g</h3>
+                                <small class="text-muted">Energy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Fats</h6>
+                                <h3 class="text-danger">{{ nutrition_summary.total_fats|default:"0"|floatformat:"0" }}g</h3>
+                                <small class="text-muted">Essential</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calorie Progress -->
+                <div class="mb-3">
+                    <h6>Daily Goal Progress</h6>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ calorie_percentage|floatformat:"0" }}%">
+                            {{ nutrition_summary.total_calories|default:"0" }} / {{ user_profile.daily_calorie_goal }} kcal
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meals by Type -->
+            <div class="premium-section">
+                <h3 class="mb-3"><i class="fas fa-gem"></i> Today's Meals</h3>
+                
+                {% if today_meals %}
+                    {% for meal_type_name, meal_type_display in meal_types %}
+                        {% with meals_for_type=today_meals|dictsort:"meal_type" %}
+                            <div class="meal-slot">
+                                <h5 class="text-capitalize mb-3">
+                                    <i class="fas fa-circle" style="color: {% if meal_type_name == 'breakfast' %}#FFA500{% elif meal_type_name == 'lunch' %}#28a745{% elif meal_type_name == 'dinner' %}#6f42c1{% else %}#17a2b8{% endif %}"></i>
+                                    {{ meal_type_display }}
+                                </h5>
+                                
+                                {% for meal in today_meals %}
+                                    {% if meal.meal_type == meal_type_name %}
+                                        <div class="meal-item">
+                                            <div>
+                                                <strong>{{ meal.food_consumed.name }}</strong>
+                                                <span class="nutrition-info">
+                                                    {{ meal.computed_calories|floatformat:"0" }} cal
+                                                </span>
+                                            </div>
+                                            <small class="text-muted">{{ meal.servings }} servings</small>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i> No meals logged for today yet. Start by adding meals below!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Add Meal Sidebar -->
+        <div class="col-md-4">
+            <div class="premium-section sticky-top" style="top: 20px;">
+                <h4 class="mb-3"><i class="fas fa-plus-circle"></i> Add Meal</h4>
+                
+                <form method="POST" action="{% url 'add_meal' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="meal_type" class="form-label">Meal Type</label>
+                        <select class="form-select" name="meal_type" id="meal_type" required>
+                            <option value="">Select meal type...</option>
+                            {% for value, label in meal_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="food_consumed" class="form-label">Food Item</label>
+                        <select class="form-select" name="food_consumed" id="food_consumed" required>
+                            <option value="">Select food...</option>
+                            {% for food in all_foods %}
+                                <option value="{{ food.id }}" data-calories="{{ food.calories }}" data-protein="{{ food.protein }}" data-carbs="{{ food.carbs }}" data-fats="{{ food.fats }}">
+                                    {{ food.name }} ({{ food.calories }} cal)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="servings" class="form-label">Servings</label>
+                        <input type="number" class="form-control" name="servings" id="servings" value="1" step="0.5" min="0.5" required>
+                    </div>
+
+                    <div class="alert alert-light mb-3" id="nutritionPreview" style="display: none;">
+                        <h6>Nutrition Preview</h6>
+                        <small>
+                            <p class="mb-1"><strong>Calories:</strong> <span id="previewCalories">0</span> kcal</p>
+                            <p class="mb-1"><strong>Protein:</strong> <span id="previewProtein">0</span>g</p>
+                            <p class="mb-1"><strong>Carbs:</strong> <span id="previewCarbs">0</span>g</p>
+                            <p class="mb-0"><strong>Fats:</strong> <span id="previewFats">0</span>g</p>
+                        </small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-check"></i> Add to Meal Plan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Dashboard -->
+    <div class="text-center mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+    // Real-time nutrition preview
+    const foodSelect = document.getElementById('food_consumed');
+    const servingsInput = document.getElementById('servings');
+    const preview = document.getElementById('nutritionPreview');
+    
+    function updatePreview() {
+        const selectedOption = foodSelect.options[foodSelect.selectedIndex];
+        
+        if (selectedOption.value) {
+            const calories = parseInt(selectedOption.getAttribute('data-calories')) || 0;
+            const protein = parseFloat(selectedOption.getAttribute('data-protein')) || 0;
+            const carbs = parseFloat(selectedOption.getAttribute('data-carbs')) || 0;
+            const fats = parseFloat(selectedOption.getAttribute('data-fats')) || 0;
+            const servings = parseFloat(servingsInput.value) || 1;
+            
+            document.getElementById('previewCalories').textContent = (calories * servings).toFixed(0);
+            document.getElementById('previewProtein').textContent = (protein * servings).toFixed(1);
+            document.getElementById('previewCarbs').textContent = (carbs * servings).toFixed(1);
+            document.getElementById('previewFats').textContent = (fats * servings).toFixed(1);
+            
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    
+    foodSelect.addEventListener('change', updatePreview);
+    servingsInput.addEventListener('input', updatePreview);
+</script>
+{% endblock %}

@@ -42,6 +42,30 @@
             background: rgba(255,255,255,0.1);
             color: white !important;
         }
+        /* Ensure navbar items are vertically centered and compact */
+        .navbar .navbar-nav {
+            align-items: center;
+        }
+        .navbar-brand, .navbar-nav .nav-link, .navbar-nav .nav-item .welcome-text {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-nav .nav-link {
+            padding: 0.35rem 0.75rem !important;
+            height: 40px;
+            line-height: 1;
+        }
+        .navbar-nav .nav-item {
+            display: flex;
+            align-items: center;
+        }
+        .navbar .btn, .navbar .btn-sm {
+            padding: 0.25rem 0.6rem;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .welcome-text {
             background: rgba(255,255,255,0.1);
             padding: 0.5rem 1rem;
@@ -135,10 +159,23 @@
                                 <i class="fas fa-plus-circle me-1"></i> Add Food
                             </a>
                         </li>
+                        <!-- Premium features condensed: single premium badge/button handled below -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'edit_profile' %}">
                                 <i class="fas fa-user-edit me-1"></i> Edit Profile
                             </a>
+                        </li>
+                        <!-- Premium Button -->
+                        <li class="nav-item">
+                            {% if user.userprofile.is_premium_active %}
+                                <span class="nav-link" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border-radius: 20px; color: black !important; font-weight: bold;">
+                                    <i class="fas fa-crown me-1"></i> Premium ✓
+                                </span>
+                            {% else %}
+                                <a class="nav-link btn btn-warning btn-sm" href="{% url 'subscription_plans' %}" style="color: black !important; font-weight: bold;">
+                                    <i class="fas fa-crown me-1"></i> Go Premium
+                                </a>
+                            {% endif %}
                         </li>
                         <li class="nav-item">
                             <span class="nav-link welcome-text">

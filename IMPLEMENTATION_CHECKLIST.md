@@ -195,8 +195,8 @@ PaymentLog
 from myapp.subscription import require_premium
 
 @require_premium
-def advanced_analytics(request):
-    return render(request, 'premium/analytics.html')
+def meal_planner(request):
+    return render(request, 'myapp/meal_planner.html')
 ```
 
 ### Check in Template
