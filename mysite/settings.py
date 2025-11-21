@@ -123,3 +123,19 @@ STATIC_URL = '/static/'
 # Authentication settings
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
+
+# Site Configuration
+SITE_URL = 'http://localhost:8000'  # Change this to your production domain
+
+# Stripe Configuration
+# ============================================
+# IMPORTANT: Replace these with your actual Stripe keys
+# Get your keys from https://dashboard.stripe.com/apikeys
+STRIPE_PUBLIC_KEY = 'pk_test_YOUR_PUBLISHABLE_KEY_HERE'  # Paste your publishable key
+STRIPE_SECRET_KEY = 'sk_test_YOUR_SECRET_KEY_HERE'  # Paste your secret key
+STRIPE_WEBHOOK_SECRET = 'whsec_YOUR_WEBHOOK_SECRET_HERE'  # Paste your webhook secret
+
+# Stripe test keys for easy reference:
+# Test card: 4242 4242 4242 4242
+# Any future expiration date (MM/YY)
+# Any 3-digit CVC

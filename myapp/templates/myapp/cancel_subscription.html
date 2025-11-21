@@ -1,0 +1,40 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Cancel Subscription{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">⚠️ Cancel Subscription</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Are you sure you want to cancel your premium subscription?</p>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">⏰ What happens next:</h6>
+                        <ul class="mb-0">
+                            <li>Your premium access will be revoked immediately</li>
+                            <li>You'll lose access to all premium features</li>
+                            <li>No refunds will be issued for the current billing period</li>
+                            <li>You can resubscribe anytime</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-muted small">Current subscription expires on: <strong>{{ user.userprofile.premium_until|date:"F d, Y" }}</strong></p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'subscription_status' %}" class="btn btn-secondary">Keep Subscription</a>
+                            <button type="submit" class="btn btn-danger">Yes, Cancel Subscription</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

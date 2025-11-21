@@ -53,6 +53,12 @@ class UserProfile(models.Model):
     weight_goal = models.CharField(max_length=10, choices=GOAL_CHOICES, default='maintain')
     daily_calorie_goal = models.IntegerField(default=2000)
     
+    # Premium subscription fields
+    is_premium = models.BooleanField(default=False)
+    premium_until = models.DateTimeField(null=True, blank=True)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
@@ -62,6 +68,12 @@ class UserProfile(models.Model):
             bmi = weight / (height_m * height_m)
             return round(bmi, 1)
         return None
+    
+    def is_premium_active(self):
+        """Check if user's premium subscription is active"""
+        if self.is_premium and self.premium_until:
+            return timezone.now() < self.premium_until
+        return False
 
 class WeightLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -203,3 +215,90 @@ class Consume(models.Model):
 
     class Meta:
         ordering = ['-date_consumed', '-time_consumed']
+
+
+class SubscriptionPlan(models.Model):
+    """Stripe subscription plans available to users"""
+    PLAN_DURATIONS = [
+        ('monthly', 'Monthly - $9.99/month'),
+        ('quarterly', 'Quarterly - $24.99/3 months'),
+        ('yearly', 'Yearly - $89.99/year'),
+    ]
+    
+    name = models.CharField(max_length=100, unique=True)  # e.g., "Premium Monthly"
+    description = models.TextField()
+    duration = models.CharField(max_length=20, choices=PLAN_DURATIONS)
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Price in USD
+    stripe_price_id = models.CharField(max_length=255, blank=True)  # Stripe Price ID
+    duration_days = models.IntegerField()  # Number of days subscription lasts
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['duration_days', 'price']
+    
+    def __str__(self):
+        return f"{self.name} - ${self.price}"
+
+
+class SubscriptionPurchase(models.Model):
+    """Track user subscription purchases"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('failed', 'Failed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True)
+    stripe_session_id = models.CharField(max_length=255, blank=True)  # Stripe Checkout Session ID
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True)  # Stripe Payment Intent ID
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.plan.name if self.plan else 'Unknown'}"
+
+
+class PaymentLog(models.Model):
+    """Log all payment transactions for audit purposes"""
+    TRANSACTION_TYPES = [
+        ('charge', 'Charge'),
+        ('refund', 'Refund'),
+        ('dispute', 'Dispute'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_logs')
+    subscription_purchase = models.ForeignKey(
+        SubscriptionPurchase, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='payment_logs'
+    )
+    stripe_charge_id = models.CharField(max_length=255, blank=True)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+    status = models.CharField(max_length=50)  # succeeded, failed, processing, etc.
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(default=dict, blank=True)  # Store raw Stripe response
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.transaction_type} - ${self.amount}"

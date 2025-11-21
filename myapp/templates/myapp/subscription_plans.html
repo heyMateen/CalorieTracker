@@ -1,0 +1,151 @@
+{% extends 'myapp/base.html' %}
+{% load static %}
+
+{% block title %}Premium Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="display-4 mb-4">🚀 Unlock Premium Features</h1>
+            {% if user_premium %}
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">✅ You're a Premium Member!</h4>
+                    <p>Your premium subscription is active until <strong>{{ premium_until|date:"F d, Y" }}</strong></p>
+                    <hr>
+                    <p class="mb-0">
+                        <a href="{% url 'subscription_status' %}" class="btn btn-sm btn-info">View Subscription Details</a>
+                        <a href="{% url 'cancel_subscription' %}" class="btn btn-sm btn-danger">Cancel Subscription</a>
+                    </p>
+                </div>
+            {% else %}
+                <p class="lead text-muted">Get access to premium features and unlock your full potential!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{{ plan.name }}</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <p class="card-text text-muted">{{ plan.description }}</p>
+                    
+                    <div class="pricing-section mb-3">
+                        <div class="price-amount display-4 text-primary">${{ plan.price }}</div>
+                        <div class="price-duration text-muted small">
+                            {% if plan.duration == 'monthly' %}
+                                per month
+                            {% elif plan.duration == 'quarterly' %}
+                                per 3 months
+                            {% else %}
+                                per year
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <ul class="list-unstyled mb-4">
+                        <li><i class="fas fa-check text-success"></i> Advanced nutrition tracking</li>
+                        <li><i class="fas fa-check text-success"></i> Meal planning tools</li>
+                        <li><i class="fas fa-check text-success"></i> Recipe management</li>
+                        <li><i class="fas fa-check text-success"></i> Custom goals & insights</li>
+                        <li><i class="fas fa-check text-success"></i> Priority support</li>
+                    </ul>
+
+                    <div class="mt-auto">
+                        {% if user_premium %}
+                            <button class="btn btn-outline-secondary btn-block" disabled>
+                                Already Premium
+                            </button>
+                        {% else %}
+                            <form method="post" action="{% url 'create_checkout' plan.id %}" style="display: inline-block; width: 100%;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-lock-open"></i> Subscribe Now
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center text-muted small">
+                    Duration: {{ plan.duration_days }} days
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-md-12">
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">No Plans Available</h4>
+                <p>Sorry, there are currently no subscription plans available. Please check back later.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr class="my-5">
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3>🎁 Why Go Premium?</h3>
+            <div class="row mt-3">
+                <div class="col-md-4 mb-3">
+                    <div class="feature-box p-3 border rounded">
+                        <h5><i class="fas fa-chart-line text-primary"></i> Advanced Analytics</h5>
+                        <p class="text-muted small">Get detailed insights into your nutrition patterns and progress.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="feature-box p-3 border rounded">
+                        <h5><i class="fas fa-utensils text-success"></i> Meal Planning</h5>
+                        <p class="text-muted small">Create customized meal plans tailored to your goals.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="feature-box p-3 border rounded">
+                        <h5><i class="fas fa-headset text-info"></i> Priority Support</h5>
+                        <p class="text-muted small">Get faster responses from our support team.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="alert alert-light border" role="alert">
+                <h5>❓ Questions?</h5>
+                <p class="mb-0">If you have any questions about our premium plans, please <a href="#">contact our support team</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pricing-section {
+        text-align: center;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .feature-box {
+        transition: all 0.3s ease;
+    }
+    
+    .feature-box:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #007bff !important;
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+</style>
+{% endblock %}

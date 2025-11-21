@@ -30,4 +30,12 @@ urlpatterns = [
     path('add-meal/', views.add_meal, name='add_meal'),
     path('log-weight/', views.log_weight, name='log_weight'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
+    
+    # Subscription and Payment URLs
+    path('subscription/plans/', views.subscription_plans, name='subscription_plans'),
+    path('subscription/checkout/<int:plan_id>/', views.create_checkout, name='create_checkout'),
+    path('subscription/success/', views.payment_success, name='payment_success'),
+    path('subscription/status/', views.subscription_status, name='subscription_status'),
+    path('subscription/cancel/', views.cancel_subscription, name='cancel_subscription'),
+    path('stripe/webhook/', views.stripe_webhook, name='stripe_webhook'),
 ]

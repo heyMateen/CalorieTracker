@@ -5,9 +5,25 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.db.models import Sum
-from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+import logging
+from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, SubscriptionPlan, SubscriptionPurchase, PaymentLog
 from .forms import SignUpForm
 from django.db.models.functions import TruncDate
+from .subscription import (
+    require_premium,
+    create_stripe_checkout_session,
+    retrieve_checkout_session,
+    process_successful_payment,
+    verify_webhook_signature,
+    StripePaymentError
+)
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def signup(request):
     if request.method == 'POST':
@@ -288,3 +304,178 @@ def add_food(request):
     # Get all food items for display
     foods = Food.objects.all().order_by('name')
     return render(request, 'myapp/add_food.html', {'foods': foods})
+
+
+# ============================================================
+# PREMIUM SUBSCRIPTION VIEWS
+# ============================================================
+
+@login_required
+def subscription_plans(request):
+    """
+    Display available subscription plans to the user
+    """
+    # Get all active subscription plans
+    plans = SubscriptionPlan.objects.filter(is_active=True).order_by('duration_days')
+    user_profile = request.user.userprofile
+    
+    context = {
+        'plans': plans,
+        'user_premium': user_profile.is_premium_active(),
+        'premium_until': user_profile.premium_until,
+        'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+    }
+    
+    return render(request, 'myapp/subscription_plans.html', context)
+
+
+@login_required
+def create_checkout(request, plan_id):
+    """
+    Create a Stripe checkout session for a subscription plan
+    """
+    try:
+        # Get the subscription plan
+        plan = SubscriptionPlan.objects.get(id=plan_id, is_active=True)
+        
+        # Create checkout session
+        session = create_stripe_checkout_session(request.user, plan)
+        
+        # Redirect to Stripe checkout
+        return redirect(session.url)
+    
+    except SubscriptionPlan.DoesNotExist:
+        messages.error(request, 'Subscription plan not found.')
+        return redirect('subscription_plans')
+    except StripePaymentError as e:
+        messages.error(request, str(e))
+        return redirect('subscription_plans')
+    except Exception as e:
+        logger.error(f"Error creating checkout: {str(e)}")
+        messages.error(request, 'An error occurred. Please try again.')
+        return redirect('subscription_plans')
+
+
+@login_required
+def payment_success(request):
+    """
+    Handle successful payment from Stripe
+    """
+    session_id = request.GET.get('session_id')
+    
+    if not session_id:
+        messages.error(request, 'Invalid session.')
+        return redirect('subscription_plans')
+    
+    try:
+        # Retrieve session from Stripe
+        session = retrieve_checkout_session(session_id)
+        
+        # Extract metadata
+        user_id = session.metadata.get('user_id')
+        plan_id = session.metadata.get('plan_id')
+        
+        # Process the payment
+        if session.payment_status == 'paid':
+            subscription_purchase = process_successful_payment(session_id, user_id, plan_id)
+            messages.success(
+                request,
+                f'🎉 Congratulations! You are now a premium member until {subscription_purchase.end_date.strftime("%B %d, %Y")}'
+            )
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Payment was not completed.')
+            return redirect('subscription_plans')
+    
+    except StripePaymentError as e:
+        logger.error(f"Payment processing error: {str(e)}")
+        messages.error(request, 'An error occurred processing your payment.')
+        return redirect('subscription_plans')
+    except Exception as e:
+        logger.error(f"Unexpected error in payment_success: {str(e)}")
+        messages.error(request, 'An unexpected error occurred.')
+        return redirect('subscription_plans')
+
+
+@login_required
+def subscription_status(request):
+    """
+    Display user's current subscription status
+    """
+    user_profile = request.user.userprofile
+    
+    # Get user's subscription purchases
+    subscriptions = SubscriptionPurchase.objects.filter(user=request.user).order_by('-created_at')
+    payment_history = PaymentLog.objects.filter(user=request.user).order_by('-created_at')[:10]
+    
+    context = {
+        'user_profile': user_profile,
+        'subscriptions': subscriptions,
+        'payment_history': payment_history,
+        'is_premium_active': user_profile.is_premium_active(),
+    }
+    
+    return render(request, 'myapp/subscription_status.html', context)
+
+
+@login_required
+def cancel_subscription(request):
+    """
+    Cancel user's premium subscription
+    """
+    if request.method == 'POST':
+        from .subscription import cancel_subscription as cancel_stripe_subscription
+        
+        if cancel_stripe_subscription(request.user):
+            messages.success(request, 'Your subscription has been cancelled.')
+        else:
+            messages.error(request, 'Error cancelling subscription. Please contact support.')
+        
+        return redirect('subscription_status')
+    
+    return render(request, 'myapp/cancel_subscription.html')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def stripe_webhook(request):
+    """
+    Handle Stripe webhook events
+    
+    IMPORTANT: Configure your webhook in Stripe dashboard to point to:
+    http://yourdomain.com/stripe/webhook/
+    """
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
+    
+    try:
+        # Verify webhook signature
+        event = verify_webhook_signature(payload, sig_header)
+        
+        if not event:
+            return JsonResponse({'status': 'invalid_signature'}, status=400)
+        
+        # Handle different event types
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            user_id = session['metadata'].get('user_id')
+            plan_id = session['metadata'].get('plan_id')
+            
+            try:
+                process_successful_payment(session['id'], user_id, plan_id)
+                logger.info(f"Webhook: Processed payment for session {session['id']}")
+            except Exception as e:
+                logger.error(f"Webhook: Error processing payment: {str(e)}")
+                return JsonResponse({'status': 'error'}, status=500)
+        
+        elif event['type'] == 'payment_intent.succeeded':
+            logger.info("Webhook: Payment intent succeeded")
+        
+        elif event['type'] == 'customer.subscription.deleted':
+            logger.info("Webhook: Subscription deleted")
+        
+        return JsonResponse({'status': 'success'}, status=200)
+    
+    except Exception as e:
+        logger.error(f"Webhook error: {str(e)}")
+        return JsonResponse({'status': 'error'}, status=500)
