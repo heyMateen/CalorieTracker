@@ -145,9 +145,9 @@ SITE_URL = 'http://localhost:8000'  # Change this to your production domain
 # ============================================
 # IMPORTANT: Replace these with your actual Stripe keys
 # Get your keys from https://dashboard.stripe.com/apikeys
-STRIPE_PUBLIC_KEY = 'pk_test_YOUR_PUBLISHABLE_KEY_HERE'  # Paste your publishable key
-STRIPE_SECRET_KEY = 'sk_test_YOUR_SECRET_KEY_HERE'  # Paste your secret key
-STRIPE_WEBHOOK_SECRET = 'whsec_YOUR_WEBHOOK_SECRET_HERE'  # Paste your webhook secret
+STRIPE_PUBLIC_KEY = 'pk_test_51SMYovB3CgFIFO9EUH5OKPYghFrhYVdp2lARAt9RZQCke2oPiTh1AD46HjMtadOPO2iZuu5lqXTAoUUaPiMsf00E00c2EXGeyc'  # Paste your publishable key
+STRIPE_SECRET_KEY = 'sk_test_51SMYovB3CgFIFO9EsIo77xAUfmp9UZEk39pYG8W4e7RKRfvNoua86WSMdErPamtS3v6jsJOpd6Xu2COHM9d8Dh0200CN8ZgEWK'  # Paste your secret key
+STRIPE_WEBHOOK_SECRET = 'whsec_YOUR_WEBHOOK_SECRET_HERE'  # Paste your webhook secret (optional for testing)
 
 # Stripe test keys for easy reference:
 # Test card: 4242 4242 4242 4242

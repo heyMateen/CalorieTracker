@@ -20,7 +20,8 @@ from .subscription import (
     retrieve_checkout_session,
     process_successful_payment,
     verify_webhook_signature,
-    StripePaymentError
+    StripePaymentError,
+    require_premium
 )
 from django.conf import settings
 
@@ -533,9 +534,10 @@ def stripe_webhook(request):
 
 
 @login_required
+@require_premium
 def meal_planner(request):
     """
-    Meal planning tools - accessible to all logged-in users
+    Meal planning tools - Premium feature only
     """
     user_profile = request.user.userprofile
     
@@ -628,6 +630,7 @@ def meal_planner(request):
     return render(request, 'myapp/meal_planner.html', context)
 
 @login_required
+@require_premium
 def add_meal_plan(request):
     if request.method == 'POST':
         date_str = request.POST.get('date')
@@ -661,6 +664,7 @@ def add_meal_plan(request):
     return redirect('meal_planner')
 
 @login_required
+@require_premium
 def log_meal_plan(request, plan_id):
     """Convert a planned meal item into a consumed log"""
     try:
@@ -698,6 +702,7 @@ def log_meal_plan(request, plan_id):
         return redirect('meal_planner')
 
 @login_required
+@require_premium
 def delete_meal_plan_item(request, item_id):
     try:
         item = MealPlanItem.objects.get(id=item_id)
@@ -717,6 +722,7 @@ def delete_meal_plan_item(request, item_id):
         return redirect('meal_planner')
 
 @login_required
+@require_premium
 def generate_shopping_list(request):
     user = request.user
     start_date = timezone.now().date()
