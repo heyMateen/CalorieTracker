@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,6 +72,10 @@
             padding: 0.5rem 1rem;
             border-radius: 8px;
             margin: 0 0.5rem;
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .navbar-toggler {
             border: none;
@@ -184,7 +189,7 @@
                                 {% else %}
                                 <i class="fas fa-user me-1"></i>
                                 {% endif %}
-                                Welcome, {{ user.get_full_name|default:user.username }}
+                                Welcome, {{ user|format_display_name }}
                             </span>
                         </li>
                         <li class="nav-item">
