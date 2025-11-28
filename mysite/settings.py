@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
@@ -120,9 +121,22 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Media files (Uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Authentication settings
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login/'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Mailpit Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
 
 # Site Configuration
 SITE_URL = 'http://localhost:8000'  # Change this to your production domain

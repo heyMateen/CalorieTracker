@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import PasswordChangeForm
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.db.models import Sum, Count
@@ -10,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 import logging
-from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, SubscriptionPlan, SubscriptionPurchase, PaymentLog
+from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, SubscriptionPlan, SubscriptionPurchase, PaymentLog, MealPlan, MealPlanItem
 from .forms import SignUpForm
 from django.db.models.functions import TruncDate
 from .subscription import (
@@ -30,6 +32,11 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             # UserProfile will be created automatically via signals
+            # Save phone number to UserProfile
+            phone_number = form.cleaned_data.get('phone_number')
+            if phone_number:
+                user.userprofile.phone_number = phone_number
+                user.userprofile.save()
             login(request, user)
             messages.success(request, 'Welcome! Your account has been created successfully.')
             return redirect('dashboard')
@@ -216,51 +223,90 @@ def log_weight(request):
 @login_required
 def edit_profile(request):
     user_profile = request.user.userprofile
+    password_form = PasswordChangeForm(request.user)
     
     if request.method == 'POST':
-        # Get form data
-        height = request.POST.get('height')
-        date_of_birth = request.POST.get('date_of_birth')
-        activity_level = request.POST.get('activity_level')
-        weight_goal = request.POST.get('weight_goal')
-        daily_calorie_goal = request.POST.get('daily_calorie_goal')
-        
-        # Update profile
-        try:
-            # Store original values
-            original_values = {
-                'height': user_profile.height,
-                'date_of_birth': user_profile.date_of_birth,
-                'activity_level': user_profile.activity_level,
-                'weight_goal': user_profile.weight_goal,
-                'daily_calorie_goal': user_profile.daily_calorie_goal
-            }
+        if 'change_password' in request.POST:
+            # Handle Password Change
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)  # Important!
+                messages.success(request, 'Your password was successfully updated!')
+                return redirect('edit_profile')
+            else:
+                messages.error(request, 'Please correct the error below.')
+        else:
+            # Handle Profile Update
+            # Get form data
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            phone_number = request.POST.get('phone_number')
+            height = request.POST.get('height')
+            date_of_birth = request.POST.get('date_of_birth')
+            activity_level = request.POST.get('activity_level')
+            weight_goal = request.POST.get('weight_goal')
+            daily_calorie_goal = request.POST.get('daily_calorie_goal')
             
-            # Set new values
-            user_profile.height = float(height) if height else None
-            user_profile.date_of_birth = date_of_birth if date_of_birth else None
-            user_profile.activity_level = activity_level
-            user_profile.weight_goal = weight_goal
-            user_profile.daily_calorie_goal = int(daily_calorie_goal)
-            
-            # Check if any values changed
-            new_values = {
-                'height': user_profile.height,
-                'date_of_birth': user_profile.date_of_birth,
-                'activity_level': user_profile.activity_level,
-                'weight_goal': user_profile.weight_goal,
-                'daily_calorie_goal': user_profile.daily_calorie_goal
-            }
-            
-            if original_values != new_values:
-                user_profile.save()
-                messages.success(request, 'Profile updated successfully!')
-            
-            return redirect('dashboard')
-        except ValueError:
-            messages.error(request, 'Please enter valid values.')
-        except Exception as e:
-            messages.error(request, f'Error updating profile: {str(e)}')
+            # Update User model (Username, Email, First Name, Last Name)
+            user = request.user
+            if username and username != user.username:
+                # Check if username is already taken
+                if User.objects.filter(username=username).exclude(id=user.id).exists():
+                    messages.error(request, 'Username is already taken.')
+                    return redirect('edit_profile')
+                user.username = username
+            if email: user.email = email
+            if first_name: user.first_name = first_name
+            if last_name: user.last_name = last_name
+            user.save()
+
+            # Update profile
+            try:
+                # Handle Profile Picture Upload
+                if 'profile_picture' in request.FILES:
+                    user_profile.profile_picture = request.FILES['profile_picture']
+                
+                # Update phone number
+                if phone_number is not None:
+                    user_profile.phone_number = phone_number
+
+                # Store original values
+                original_values = {
+                    'height': user_profile.height,
+                    'date_of_birth': user_profile.date_of_birth,
+                    'activity_level': user_profile.activity_level,
+                    'weight_goal': user_profile.weight_goal,
+                    'daily_calorie_goal': user_profile.daily_calorie_goal
+                }
+                
+                # Set new values
+                user_profile.height = float(height) if height else None
+                user_profile.date_of_birth = date_of_birth if date_of_birth else None
+                user_profile.activity_level = activity_level
+                user_profile.weight_goal = weight_goal
+                user_profile.daily_calorie_goal = int(daily_calorie_goal)
+                
+                # Check if any values changed (including picture)
+                new_values = {
+                    'height': user_profile.height,
+                    'date_of_birth': user_profile.date_of_birth,
+                    'activity_level': user_profile.activity_level,
+                    'weight_goal': user_profile.weight_goal,
+                    'daily_calorie_goal': user_profile.daily_calorie_goal
+                }
+                
+                if original_values != new_values or 'profile_picture' in request.FILES:
+                    user_profile.save()
+                    messages.success(request, 'Profile updated successfully!')
+                
+                return redirect('dashboard')
+            except ValueError:
+                messages.error(request, 'Please enter valid values.')
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
     
     # Get choices for form
     activity_choices = UserProfile.ACTIVITY_CHOICES
@@ -270,6 +316,7 @@ def edit_profile(request):
         'user_profile': user_profile,
         'activity_choices': activity_choices,
         'goal_choices': goal_choices,
+        'password_form': password_form,
     }
     
     return render(request, 'myapp/edit_profile.html', context)
@@ -490,42 +537,216 @@ def meal_planner(request):
     """
     Meal planning tools - accessible to all logged-in users
     """
-    today = timezone.now().date()
     user_profile = request.user.userprofile
     
-    # Get meals from today
-    today_meals = Consume.objects.filter(
+    # Get date from request or default to today
+    date_str = request.GET.get('date')
+    if date_str:
+        try:
+            current_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            current_date = timezone.now().date()
+    else:
+        current_date = timezone.now().date()
+        
+    # Get meal plans for the selected date
+    meal_plans = MealPlan.objects.filter(
         user=request.user,
-        date_consumed=today
-    ).select_related('food_consumed').order_by('meal_type')
+        date=current_date
+    ).prefetch_related('mealplanitem_set__food')
     
-    # Add computed calories for each meal
-    for meal in today_meals:
-        meal.computed_calories = meal.food_consumed.calories * meal.servings
+    # Organize by meal type
+    planned_meals = {}
+    nutrition_summary = {
+        'total_calories': 0,
+        'total_protein': 0,
+        'total_carbs': 0,
+        'total_fats': 0
+    }
     
-    # Calculate nutrition summary
-    nutrition_summary = Consume.objects.filter(
-        user=request.user,
-        date_consumed=today
-    ).aggregate(
-        total_calories=Sum('food_consumed__calories'),
-        total_protein=Sum('food_consumed__protein'),
-        total_carbs=Sum('food_consumed__carbs'),
-        total_fats=Sum('food_consumed__fats')
-    )
-    
+    # Initialize all meal types
+    for meal_type_code, meal_type_name in MealPlan.MEAL_TYPES:
+        planned_meals[meal_type_code] = {
+            'name': meal_type_name,
+            'items': [],
+            'calories': 0
+        }
+        
+    # Populate with data
+    for plan in meal_plans:
+        meal_type = plan.meal_type
+        if meal_type in planned_meals:
+            for item in plan.mealplanitem_set.all():
+                calories = item.food.calories * item.servings
+                protein = item.food.protein * item.servings
+                carbs = item.food.carbs * item.servings
+                fats = item.food.fats * item.servings
+                
+                planned_meals[meal_type]['items'].append({
+                    'food': item.food,
+                    'servings': item.servings,
+                    'calories': calories,
+                    'id': item.id
+                })
+                
+                planned_meals[meal_type]['calories'] += calories
+                
+                # Update totals
+                nutrition_summary['total_calories'] += calories
+                nutrition_summary['total_protein'] += protein
+                nutrition_summary['total_carbs'] += carbs
+                nutrition_summary['total_fats'] += fats
+
     # Calculate calorie progress percentage
-    total_calories = nutrition_summary.get('total_calories') or 0
-    calorie_percentage = min((total_calories / user_profile.daily_calorie_goal * 100), 100) if user_profile.daily_calorie_goal > 0 else 0
+    calorie_percentage = min((nutrition_summary['total_calories'] / user_profile.daily_calorie_goal * 100), 100) if user_profile.daily_calorie_goal > 0 else 0
     
+    # Generate dates for the weekly bar (current week)
+    today = timezone.now().date()
+    start_of_week = current_date - timedelta(days=current_date.weekday())
+    week_dates = []
+    for i in range(7):
+        day = start_of_week + timedelta(days=i)
+        week_dates.append({
+            'date': day,
+            'day_name': day.strftime('%a'),
+            'day_num': day.day,
+            'is_today': day == today,
+            'is_selected': day == current_date
+        })
+
     context = {
         'user_profile': user_profile,
-        'today': today,
-        'today_meals': today_meals,
+        'current_date': current_date,
+        'week_dates': week_dates,
+        'planned_meals': planned_meals,
         'nutrition_summary': nutrition_summary,
         'calorie_percentage': calorie_percentage,
-        'meal_types': MEAL_TYPE_CHOICES,
+        'meal_types': MealPlan.MEAL_TYPES,
         'all_foods': Food.objects.all().order_by('name'),
     }
     
     return render(request, 'myapp/meal_planner.html', context)
+
+@login_required
+def add_meal_plan(request):
+    if request.method == 'POST':
+        date_str = request.POST.get('date')
+        meal_type = request.POST.get('meal_type')
+        food_id = request.POST.get('food_consumed')
+        servings = float(request.POST.get('servings', 1))
+        
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            food = Food.objects.get(id=food_id)
+            
+            # Get or create MealPlan for this user, date, and meal_type
+            meal_plan, created = MealPlan.objects.get_or_create(
+                user=request.user,
+                date=date,
+                meal_type=meal_type
+            )
+            
+            # Add item to meal plan
+            MealPlanItem.objects.create(
+                meal_plan=meal_plan,
+                food=food,
+                servings=servings
+            )
+            
+            messages.success(request, f'Added {food.name} to your plan for {date.strftime("%b %d")}')
+        except Exception as e:
+            messages.error(request, f'Error adding to plan: {str(e)}')
+            
+        return redirect(f'/meal-planner/?date={date_str}')
+    return redirect('meal_planner')
+
+@login_required
+def log_meal_plan(request, plan_id):
+    """Convert a planned meal item into a consumed log"""
+    try:
+        # We are actually receiving the MealPlanItem id here for granularity
+        item = MealPlanItem.objects.get(id=plan_id)
+        
+        # Verify ownership through the parent MealPlan
+        if item.meal_plan.user != request.user:
+            return redirect('meal_planner')
+            
+        # Create Consume record
+        Consume.objects.create(
+            user=request.user,
+            food_consumed=item.food,
+            meal_type=item.meal_plan.meal_type,
+            servings=item.servings,
+            date_consumed=item.meal_plan.date
+        )
+        
+        # Optional: Remove from plan after logging? 
+        # For now, let's keep it but maybe mark it visually in UI if we added a status field.
+        # Or just delete it to "move" it. Let's delete it to "move" it for now as per "Check off" metaphor.
+        date_str = item.meal_plan.date.strftime('%Y-%m-%d')
+        item.delete()
+        
+        # If meal plan is empty, delete it too
+        if not item.meal_plan.mealplanitem_set.exists():
+            item.meal_plan.delete()
+            
+        messages.success(request, f'Logged {item.food.name} as consumed!')
+        return redirect(f'/meal-planner/?date={date_str}')
+        
+    except Exception as e:
+        messages.error(request, f'Error logging meal: {str(e)}')
+        return redirect('meal_planner')
+
+@login_required
+def delete_meal_plan_item(request, item_id):
+    try:
+        item = MealPlanItem.objects.get(id=item_id)
+        if item.meal_plan.user != request.user:
+            return redirect('meal_planner')
+            
+        date_str = item.meal_plan.date.strftime('%Y-%m-%d')
+        item.delete()
+        
+        if not item.meal_plan.mealplanitem_set.exists():
+            item.meal_plan.delete()
+            
+        messages.success(request, 'Removed item from plan.')
+        return redirect(f'/meal-planner/?date={date_str}')
+    except Exception as e:
+        messages.error(request, 'Error removing item.')
+        return redirect('meal_planner')
+
+@login_required
+def generate_shopping_list(request):
+    user = request.user
+    start_date = timezone.now().date()
+    end_date = start_date + timedelta(days=7)
+    
+    # Get all meal plan items for the next 7 days
+    items = MealPlanItem.objects.filter(
+        meal_plan__user=user,
+        meal_plan__date__range=[start_date, end_date]
+    ).select_related('food')
+    
+    # Aggregate ingredients
+    shopping_list = {}
+    
+    for item in items:
+        food_name = item.food.name
+        if food_name in shopping_list:
+            shopping_list[food_name]['quantity'] += item.servings
+            shopping_list[food_name]['calories'] += item.food.calories * item.servings
+        else:
+            shopping_list[food_name] = {
+                'food': item.food,
+                'quantity': item.servings,
+                'calories': item.food.calories * item.servings
+            }
+            
+    context = {
+        'shopping_list': shopping_list,
+        'start_date': start_date,
+        'end_date': end_date
+    }
+    
+    return render(request, 'myapp/shopping_list.html', context)

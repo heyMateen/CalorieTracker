@@ -18,185 +18,231 @@
         margin-bottom: 15px;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .meal-slot:hover {
+        transform: translateY(-2px);
     }
     .meal-item {
         background: #f8f9fa;
-        padding: 10px;
-        border-radius: 6px;
+        padding: 12px;
+        border-radius: 8px;
         margin-bottom: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border: 1px solid #e9ecef;
     }
     .nutrition-info {
         display: inline-block;
         background: #e9ecef;
-        padding: 5px 10px;
+        padding: 4px 8px;
         border-radius: 4px;
-        font-size: 12px;
-        margin-left: 10px;
+        font-size: 11px;
+        margin-left: 8px;
+        color: #495057;
+    }
+    .week-nav {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .day-card {
+        text-align: center;
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        flex: 1;
+        margin: 0 5px;
+        text-decoration: none;
+        color: #212529;
+        transition: all 0.2s;
+    }
+    .day-card:hover {
+        background-color: #f8f9fa;
+    }
+    .day-card.active {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+    }
+    .day-card.today {
+        border: 2px solid #007bff;
+    }
+    .day-card.active.today {
+        border-color: #0056b3;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    <h1 class="mb-4">
-        <i class="fas fa-utensils text-primary"></i> Smart Meal Planner
-    </h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-calendar-alt text-primary"></i> Smart Meal Planner
+        </h1>
+        <div>
+            <a href="{% url 'generate_shopping_list' %}" class="btn btn-success">
+                <i class="fas fa-shopping-cart"></i> Shopping List
+            </a>
+        </div>
+    </div>
+
+    <!-- Weekly Navigation -->
+    <div class="week-nav">
+        {% for day in week_dates %}
+        <a href="?date={{ day.date|date:'Y-m-d' }}" class="day-card {% if day.is_selected %}active{% endif %} {% if day.is_today %}today{% endif %}">
+            <div class="small text-uppercase">{{ day.day_name }}</div>
+            <div class="h4 mb-0">{{ day.day_num }}</div>
+        </a>
+        {% endfor %}
+    </div>
 
     <div class="row">
         <div class="col-md-8">
-            <!-- Today's Nutrition Summary -->
+            <!-- Nutrition Summary for Selected Date -->
             <div class="premium-section">
-                <h3 class="mb-3"><i class="fas fa-gem"></i> Today's Nutrition Summary</h3>
+                <h4 class="mb-3"><i class="fas fa-chart-pie"></i> Planned Nutrition for {{ current_date|date:"l, M d" }}</h4>
                 
-                <div class="row text-center mb-4">
-                    <div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted mb-2">Total Calories</h6>
-                                <h3 class="text-primary">{{ nutrition_summary.total_calories|default:"0" }}</h3>
-                                <small class="text-muted">/ {{ user_profile.daily_calorie_goal }} kcal</small>
-                            </div>
-                        </div>
+                <div class="row text-center mb-3">
+                    <div class="col-3">
+                        <h6 class="text-muted mb-1">Calories</h6>
+                        <h4 class="text-primary">{{ nutrition_summary.total_calories|floatformat:0 }}</h4>
+                        <small class="text-muted">/ {{ user_profile.daily_calorie_goal }}</small>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted mb-2">Protein</h6>
-                                <h3 class="text-success">{{ nutrition_summary.total_protein|default:"0"|floatformat:"0" }}g</h3>
-                                <small class="text-muted">Macronutrient</small>
-                            </div>
-                        </div>
+                    <div class="col-3">
+                        <h6 class="text-muted mb-1">Protein</h6>
+                        <h4 class="text-success">{{ nutrition_summary.total_protein|floatformat:0 }}g</h4>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted mb-2">Carbs</h6>
-                                <h3 class="text-warning">{{ nutrition_summary.total_carbs|default:"0"|floatformat:"0" }}g</h3>
-                                <small class="text-muted">Energy</small>
-                            </div>
-                        </div>
+                    <div class="col-3">
+                        <h6 class="text-muted mb-1">Carbs</h6>
+                        <h4 class="text-warning">{{ nutrition_summary.total_carbs|floatformat:0 }}g</h4>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body">
-                                <h6 class="text-muted mb-2">Fats</h6>
-                                <h3 class="text-danger">{{ nutrition_summary.total_fats|default:"0"|floatformat:"0" }}g</h3>
-                                <small class="text-muted">Essential</small>
-                            </div>
-                        </div>
+                    <div class="col-3">
+                        <h6 class="text-muted mb-1">Fats</h6>
+                        <h4 class="text-danger">{{ nutrition_summary.total_fats|floatformat:0 }}g</h4>
                     </div>
                 </div>
 
-                <!-- Calorie Progress -->
-                <div class="mb-3">
-                    <h6>Daily Goal Progress</h6>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-success" role="progressbar" 
-                             style="width: {{ calorie_percentage|floatformat:"0" }}%">
-                            {{ nutrition_summary.total_calories|default:"0" }} / {{ user_profile.daily_calorie_goal }} kcal
-                        </div>
-                    </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ calorie_percentage|floatformat:"0" }}%"></div>
                 </div>
             </div>
 
-            <!-- Meals by Type -->
-            <div class="premium-section">
-                <h3 class="mb-3"><i class="fas fa-gem"></i> Today's Meals</h3>
+            <!-- Planned Meals -->
+            {% for meal_type_code, meal_data in planned_meals.items %}
+            <div class="meal-slot">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-capitalize mb-0">
+                        <i class="fas fa-circle me-2" style="font-size: 0.8em; color: {% if meal_type_code == 'breakfast' %}#FFA500{% elif meal_type_code == 'lunch' %}#28a745{% elif meal_type_code == 'dinner' %}#6f42c1{% else %}#17a2b8{% endif %}"></i>
+                        {{ meal_data.name }}
+                    </h5>
+                    <span class="badge bg-light text-dark">{{ meal_data.calories|floatformat:0 }} kcal</span>
+                </div>
                 
-                {% if today_meals %}
-                    {% for meal_type_name, meal_type_display in meal_types %}
-                        {% with meals_for_type=today_meals|dictsort:"meal_type" %}
-                            <div class="meal-slot">
-                                <h5 class="text-capitalize mb-3">
-                                    <i class="fas fa-circle" style="color: {% if meal_type_name == 'breakfast' %}#FFA500{% elif meal_type_name == 'lunch' %}#28a745{% elif meal_type_name == 'dinner' %}#6f42c1{% else %}#17a2b8{% endif %}"></i>
-                                    {{ meal_type_display }}
-                                </h5>
-                                
-                                {% for meal in today_meals %}
-                                    {% if meal.meal_type == meal_type_name %}
-                                        <div class="meal-item">
-                                            <div>
-                                                <strong>{{ meal.food_consumed.name }}</strong>
-                                                <span class="nutrition-info">
-                                                    {{ meal.computed_calories|floatformat:"0" }} cal
-                                                </span>
-                                            </div>
-                                            <small class="text-muted">{{ meal.servings }} servings</small>
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
+                {% if meal_data.items %}
+                    {% for item in meal_data.items %}
+                    <div class="meal-item">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <div class="flex-grow-1">
+                                <strong>{{ item.food.name }}</strong>
+                                <span class="text-muted ms-2 small">{{ item.servings }} servings</span>
+                                <div class="mt-1">
+                                    <span class="nutrition-info">{{ item.calories|floatformat:0 }} kcal</span>
+                                    <span class="nutrition-info">P: {{ item.food.protein|floatformat:0 }}g</span>
+                                    <span class="nutrition-info">C: {{ item.food.carbs|floatformat:0 }}g</span>
+                                    <span class="nutrition-info">F: {{ item.food.fats|floatformat:0 }}g</span>
+                                </div>
                             </div>
-                        {% endwith %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'log_meal_plan' item.id %}" class="btn btn-outline-success btn-sm" title="Log as Consumed">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            <a href="{% url 'delete_meal_plan_item' item.id %}" class="btn btn-outline-danger btn-sm" title="Remove from Plan">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
                     {% endfor %}
                 {% else %}
-                    <div class="alert alert-info" role="alert">
-                        <i class="fas fa-info-circle"></i> No meals logged for today yet. Start by adding meals below!
-                    </div>
+                    <p class="text-muted small mb-0 fst-italic">No meals planned.</p>
                 {% endif %}
             </div>
+            {% endfor %}
         </div>
 
         <!-- Add Meal Sidebar -->
         <div class="col-md-4">
-            <div class="premium-section sticky-top" style="top: 20px;">
-                <h4 class="mb-3"><i class="fas fa-plus-circle"></i> Add Meal</h4>
-                
-                <form method="POST" action="{% url 'add_meal' %}">
-                    {% csrf_token %}
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle text-primary"></i> Add to Plan</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'add_meal_plan' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ current_date|date:'Y-m-d' }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Meal Type</label>
+                            <select class="form-select" name="meal_type" required>
+                                {% for value, label in meal_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Food Item</label>
+                            <select class="form-select" name="food_consumed" id="food_consumed" required>
+                                <option value="">Select food...</option>
+                                {% for food in all_foods %}
+                                    <option value="{{ food.id }}" 
+                                            data-calories="{{ food.calories }}" 
+                                            data-protein="{{ food.protein }}" 
+                                            data-carbs="{{ food.carbs }}" 
+                                            data-fats="{{ food.fats }}">
+                                        {{ food.name }} ({{ food.calories }} cal)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Servings</label>
+                            <input type="number" class="form-control" name="servings" id="servings" value="1" step="0.5" min="0.5" required>
+                        </div>
+
+                        <div class="alert alert-light mb-3" id="nutritionPreview" style="display: none;">
+                            <h6 class="small fw-bold">Preview</h6>
+                            <div class="row g-1 small">
+                                <div class="col-6">Cal: <span id="previewCalories">0</span></div>
+                                <div class="col-6">Prot: <span id="previewProtein">0</span>g</div>
+                                <div class="col-6">Carb: <span id="previewCarbs">0</span>g</div>
+                                <div class="col-6">Fat: <span id="previewFats">0</span>g</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Add to Plan
+                        </button>
+                    </form>
                     
-                    <div class="mb-3">
-                        <label for="meal_type" class="form-label">Meal Type</label>
-                        <select class="form-select" name="meal_type" id="meal_type" required>
-                            <option value="">Select meal type...</option>
-                            {% for value, label in meal_types %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info btn-sm" type="button">
+                            <i class="fas fa-magic"></i> AI Suggest Meal (Coming Soon)
+                        </button>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="food_consumed" class="form-label">Food Item</label>
-                        <select class="form-select" name="food_consumed" id="food_consumed" required>
-                            <option value="">Select food...</option>
-                            {% for food in all_foods %}
-                                <option value="{{ food.id }}" data-calories="{{ food.calories }}" data-protein="{{ food.protein }}" data-carbs="{{ food.carbs }}" data-fats="{{ food.fats }}">
-                                    {{ food.name }} ({{ food.calories }} cal)
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="servings" class="form-label">Servings</label>
-                        <input type="number" class="form-control" name="servings" id="servings" value="1" step="0.5" min="0.5" required>
-                    </div>
-
-                    <div class="alert alert-light mb-3" id="nutritionPreview" style="display: none;">
-                        <h6>Nutrition Preview</h6>
-                        <small>
-                            <p class="mb-1"><strong>Calories:</strong> <span id="previewCalories">0</span> kcal</p>
-                            <p class="mb-1"><strong>Protein:</strong> <span id="previewProtein">0</span>g</p>
-                            <p class="mb-1"><strong>Carbs:</strong> <span id="previewCarbs">0</span>g</p>
-                            <p class="mb-0"><strong>Fats:</strong> <span id="previewFats">0</span>g</p>
-                        </small>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-check"></i> Add to Meal Plan
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
-
-    <!-- Back to Dashboard -->
-    <div class="text-center mt-4">
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-lg">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
     </div>
 </div>
 

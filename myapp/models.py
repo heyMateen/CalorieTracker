@@ -52,6 +52,8 @@ class UserProfile(models.Model):
     activity_level = models.CharField(max_length=20, choices=ACTIVITY_CHOICES, default='moderate')
     weight_goal = models.CharField(max_length=10, choices=GOAL_CHOICES, default='maintain')
     daily_calorie_goal = models.IntegerField(default=2000)
+    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True, help_text="Phone number")
     
     # Premium subscription fields
     is_premium = models.BooleanField(default=False)

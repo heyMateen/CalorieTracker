@@ -1,0 +1,69 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Shopping List{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-shopping-cart text-primary"></i> Shopping List</h1>
+        <a href="{% url 'meal_planner' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Planner
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0">For {{ start_date|date:"M d" }} - {{ end_date|date:"M d" }}</h5>
+        </div>
+        <div class="card-body">
+            {% if shopping_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;"></th>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Est. Calories</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, details in shopping_list.items %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input" id="check_{{ forloop.counter }}">
+                                </td>
+                                <td>
+                                    <label class="form-check-label fw-bold" for="check_{{ forloop.counter }}">
+                                        {{ name }}
+                                    </label>
+                                </td>
+                                <td>{{ details.quantity }} servings</td>
+                                <td class="text-muted">{{ details.calories|floatformat:0 }} kcal</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 text-end">
+                    <button class="btn btn-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print List
+                    </button>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="fas fa-shopping-basket fa-3x text-muted"></i>
+                    </div>
+                    <h4>Your shopping list is empty</h4>
+                    <p class="text-muted">Plan some meals to generate a shopping list!</p>
+                    <a href="{% url 'meal_planner' %}" class="btn btn-primary mt-2">
+                        Go to Meal Planner
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from myapp import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -41,4 +43,17 @@ urlpatterns = [
     
     # Premium Features
     path('meal-planner/', views.meal_planner, name='meal_planner'),
+    path('meal-planner/add/', views.add_meal_plan, name='add_meal_plan'),
+    path('meal-planner/log/<int:plan_id>/', views.log_meal_plan, name='log_meal_plan'),
+    path('meal-planner/delete/<int:item_id>/', views.delete_meal_plan_item, name='delete_meal_plan_item'),
+    path('meal-planner/shopping-list/', views.generate_shopping_list, name='generate_shopping_list'),
+    
+    # Password Reset URLs
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='myapp/password_reset_form.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='myapp/password_reset_done.html'), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='myapp/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='myapp/password_reset_complete.html'), name='password_reset_complete'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
