@@ -55,6 +55,17 @@ urlpatterns = [
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='myapp/password_reset_done.html'), name='password_reset_done'),
     path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='myapp/password_reset_confirm.html'), name='password_reset_confirm'),
     path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='myapp/password_reset_complete.html'), name='password_reset_complete'),
+    
+    # Custom Admin Panel URLs
+    path('control-panel/', views.admin_dashboard, name='admin_dashboard'),
+    path('control-panel/users-ajax/', views.admin_users_ajax, name='admin_users_ajax'),
+    path('control-panel/add-user/', views.admin_add_user, name='admin_add_user'),
+    path('control-panel/edit-user/<int:user_id>/', views.admin_edit_user, name='admin_edit_user'),
+    path('control-panel/delete-user/<int:user_id>/', views.admin_delete_user, name='admin_delete_user'),
+    path('control-panel/toggle-user/<int:user_id>/', views.admin_toggle_user_status, name='admin_toggle_user'),
+    path('control-panel/user/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),
+    path('control-panel/impersonate/<int:user_id>/', views.impersonate_user, name='impersonate_user'),
+    path('stop-impersonation/', views.stop_impersonation, name='stop_impersonation'),
 ]
 
 if settings.DEBUG:

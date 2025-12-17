@@ -517,85 +517,119 @@
 
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-md-8" data-aos="fade-right">
+        <div class="col-md-6" data-aos="fade-right">
             <div class="card border-0 shadow-sm hover-scale">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0"><i class="fas fa-chart-area text-primary me-2"></i>Calorie Intake History</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="calorieHistory" height="300"></canvas>
+                    <canvas id="calorieHistory" height="220"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-4" data-aos="fade-left">
+        <div class="col-md-6" data-aos="fade-left">
             <div class="card border-0 shadow-sm hover-scale">
-                <div class="card-header bg-white border-0">
-                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie text-success me-2"></i>Today's Nutrients</h5>
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-weight text-info me-2"></i>Weight Tracking</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addWeightModal">
+                        <i class="fas fa-plus me-1"></i> Log
+                    </button>
                 </div>
                 <div class="card-body">
-                    <canvas id="nutrientsPie" height="300"></canvas>
+                    <canvas id="weightHistory" height="220"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Meals Section -->
-    <div class="row g-4">
-        <div class="col-md-6" data-aos="fade-up">
+    <!-- Today's Nutrients & Meals Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4" data-aos="fade-up">
             <div class="card border-0 shadow-sm hover-scale">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0"><i class="fas fa-utensils text-warning me-2"></i>Today's Meals</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMealModal">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie text-success me-2"></i>Today's Nutrients</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="nutrientsPie" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8" data-aos="fade-up">
+            <div class="card border-0 shadow-sm hover-scale" style="border-radius: 20px; overflow: hidden;">
+                <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(74, 0, 224, 0.1) 0%, rgba(142, 45, 226, 0.15) 100%); padding: 1.25rem;">
+                    <h5 class="card-title mb-0" style="color: #4A00E0;"><i class="fas fa-utensils me-2"></i>Today's Meals</h5>
+                    <button class="btn btn-sm px-3" data-bs-toggle="modal" data-bs-target="#addMealModal" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white; border-radius: 20px; font-weight: 600;">
                         <i class="fas fa-plus me-1"></i> Add Meal
                     </button>
                 </div>
                 <div class="card-body p-0">
-                    <div class="accordion" id="mealsAccordion">
-                        {% for meal_type, foods in daily_meals.items %}
-                        <div class="accordion-item border-0">
-                            <h2 class="accordion-header" id="heading{{ meal_type }}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapse{{ meal_type }}">
-                                    {{ meal_type|title }}
-                                    <span class="badge bg-primary ms-2">{{ foods|length }} items</span>
-                                </button>
-                            </h2>
-                            <div id="collapse{{ meal_type }}" class="accordion-collapse collapse"
-                                 data-bs-parent="#mealsAccordion">
-                                <div class="accordion-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-borderless align-middle">
-                                            {% for food in foods %}
-                                            <tr>
-                                                <td>{{ food.food_consumed.name }}</td>
-                                                <td>{{ food.food_consumed.calories }} kcal</td>
-                                                <td class="text-end">
-                                                    <button class="btn btn-outline-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </table>
-                                    </div>
+                    {% for meal_type, foods in daily_meals.items %}
+                    <div class="meal-section" style="border-bottom: 1px solid #f0f0f0;">
+                        <div class="d-flex justify-content-between align-items-center p-3" 
+                             data-bs-toggle="collapse" data-bs-target="#collapse{{ meal_type }}" 
+                             style="cursor: pointer; transition: background 0.2s;"
+                             onmouseover="this.style.background='#f8f9fa'" 
+                             onmouseout="this.style.background='transparent'">
+                            <div class="d-flex align-items-center">
+                                {% if meal_type == 'breakfast' %}
+                                <div class="meal-icon me-3" style="width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-sun text-white"></i>
+                                </div>
+                                {% elif meal_type == 'lunch' %}
+                                <div class="meal-icon me-3" style="width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-cloud-sun text-white"></i>
+                                </div>
+                                {% elif meal_type == 'dinner' %}
+                                <div class="meal-icon me-3" style="width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-moon text-white"></i>
+                                </div>
+                                {% else %}
+                                <div class="meal-icon me-3" style="width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-cookie-bite text-white"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ meal_type|title }}</h6>
+                                    <small class="text-muted">{{ foods|length }} item{{ foods|length|pluralize }}</small>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chevron-down text-muted" style="transition: transform 0.3s;"></i>
+                            </div>
                         </div>
-                        {% endfor %}
+                        <div id="collapse{{ meal_type }}" class="collapse">
+                            <div class="px-3 pb-3">
+                                {% for food in foods %}
+                                <div class="d-flex justify-content-between align-items-center p-2 mb-2" style="background: #f8f9fa; border-radius: 10px;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-circle me-2" style="font-size: 6px; color: #8E2DE2;"></i>
+                                        <span>{{ food.food_consumed.name }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="text-muted me-3">{{ food.food_consumed.calories }} kcal</span>
+                                        <button class="btn btn-sm" style="width: 30px; height: 30px; border-radius: 50%; background: #fee2e2; color: #ef4444; padding: 0;">
+                                            <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center text-muted py-2">
+                                    <i class="fas fa-utensils mb-2" style="font-size: 1.5rem; opacity: 0.3;"></i>
+                                    <p class="mb-0 small">No meals logged yet</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Weight Tracking</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addWeightModal">
-                        <i class="fas fa-plus me-1"></i> Log Weight
-                    </button>
-                </div>
-                <div class="card-body">
-                    <canvas id="weightHistory" height="300"></canvas>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-utensils mb-3" style="font-size: 3rem; color: #e0e0e0;"></i>
+                        <p class="text-muted mb-0">No meals logged today</p>
+                        <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addMealModal">
+                            <i class="fas fa-plus me-1"></i> Log Your First Meal
+                        </button>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

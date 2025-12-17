@@ -1,0 +1,912 @@
+{% extends "myapp/base.html" %}
+{% block title %}Admin Panel - Calorie Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .user-table {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    .user-table thead {
+        background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+        color: white;
+    }
+    
+    .user-table th {
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        border: none;
+    }
+    
+    .user-table td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .user-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e0e0e0;
+    }
+    
+    .user-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .badge-premium {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        color: #1a1a2e;
+    }
+    
+    .badge-admin {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+    
+    .badge-active {
+        background: #10B981;
+        color: white;
+    }
+    
+    .badge-inactive {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        transition: all 0.2s ease;
+        margin: 0 2px;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .btn-impersonate {
+        background: #3B82F6;
+        color: white;
+    }
+    
+    .btn-view {
+        background: #8B5CF6;
+        color: white;
+    }
+    
+    .btn-edit {
+        background: #F59E0B;
+        color: white;
+    }
+    
+    .btn-delete {
+        background: #EF4444;
+        color: white;
+    }
+    
+    .search-box {
+        background: white;
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        max-width: 400px;
+    }
+    
+    .search-box:focus-within {
+        border-color: #8E2DE2;
+        box-shadow: 0 4px 15px rgba(142, 45, 226, 0.1);
+    }
+    
+    .search-box input,
+    .search-box input.form-control {
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        height: auto !important;
+    }
+    
+    .pagination .page-link {
+        border: none;
+        border-radius: 10px;
+        margin: 0 3px;
+        color: #4A00E0;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+        color: white;
+    }
+    
+    .impersonation-banner {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .sort-link {
+        color: white;
+        text-decoration: none;
+    }
+    
+    .sort-link:hover {
+        color: #FFD700;
+    }
+    
+    .sort-active {
+        color: #FFD700 !important;
+    }
+    
+    /* Real-time search animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .loading-row {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    #usersTableBody tr {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .search-box input::placeholder {
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus-within input::placeholder {
+        opacity: 0.5;
+    }
+    
+    /* Smooth transitions for pagination */
+    #paginationContainer {
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Highlight effect on new results */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #usersTableBody tr {
+        animation: slideIn 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Admin Header -->
+    <div class="admin-header" data-aos="fade-down">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2"><i class="fas fa-shield-alt me-3"></i>Admin Control Panel</h1>
+                <p class="mb-0 opacity-75">Manage users, view analytics, and control your application</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light btn-lg" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-user-plus me-2"></i>Add User
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ total_users }}</h3>
+                        <small class="text-muted">Total Users</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ active_users }}</h3>
+                        <small class="text-muted">Active Users</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white;">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ premium_users }}</h3>
+                        <small class="text-muted">Premium Users</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3" style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white;">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">{{ new_users_today }}</h3>
+                        <small class="text-muted">New Today</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Sort Bar - Real-time AJAX -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;" data-aos="fade-up">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <div class="search-box d-flex align-items-center position-relative">
+                        <i class="fas fa-search text-muted me-2"></i>
+                        <input type="text" id="searchInput" placeholder="Search by username, email, or name..." 
+                               value="{{ search_query }}" class="form-control border-0">
+                        <div id="searchSpinner" class="position-absolute end-0 me-3 d-none">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select id="sortSelect" class="form-select" style="border-radius: 10px;">
+                        <option value="-date_joined" {% if sort_by == '-date_joined' %}selected{% endif %}>Newest First</option>
+                        <option value="date_joined" {% if sort_by == 'date_joined' %}selected{% endif %}>Oldest First</option>
+                        <option value="username" {% if sort_by == 'username' %}selected{% endif %}>Username (A-Z)</option>
+                        <option value="-username" {% if sort_by == '-username' %}selected{% endif %}>Username (Z-A)</option>
+                        <option value="-last_login" {% if sort_by == '-last_login' %}selected{% endif %}>Last Login</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" id="refreshBtn" class="btn w-100" onclick="fetchUsers()" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white; border-radius: 10px;">
+                        <i class="fas fa-sync-alt me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted"><i class="fas fa-bolt text-warning me-1"></i>Real-time search - results update as you type</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="user-table" data-aos="fade-up">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Last Login</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                {% for user in page_obj %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            {% if user.userprofile.profile_picture %}
+                            <img src="{{ user.userprofile.profile_picture.url }}" alt="" class="user-avatar me-3">
+                            {% else %}
+                            <div class="user-avatar-placeholder me-3">
+                                {{ user.username|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            <div>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.is_superuser %}
+                                <span class="badge badge-admin ms-1">Superuser</span>
+                                {% elif user.is_staff %}
+                                <span class="badge badge-admin ms-1">Admin</span>
+                                {% endif %}
+                                {% if user.userprofile.is_premium %}
+                                <span class="badge badge-premium ms-1"><i class="fas fa-crown me-1"></i>Premium</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ user.first_name }} {{ user.last_name }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user.email|default:"-" }}</td>
+                    <td>
+                        {% if user.is_active %}
+                        <span class="badge badge-active"><i class="fas fa-check me-1"></i>Active</span>
+                        {% else %}
+                        <span class="badge badge-inactive"><i class="fas fa-ban me-1"></i>Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small>{{ user.date_joined|date:"M d, Y" }}</small>
+                    </td>
+                    <td>
+                        <small>{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</small>
+                    </td>
+                    <td class="text-center">
+                        {% if user.id != request.user.id %}
+                        <a href="{% url 'impersonate_user' user.id %}" class="action-btn btn-impersonate" title="Impersonate User">
+                            <i class="fas fa-user-secret"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'admin_user_detail' user.id %}" class="action-btn btn-view" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="action-btn btn-edit" title="Edit User" 
+                                onclick="openEditModal('{{ user.id }}', '{{ user.username|escapejs }}', '{{ user.email|escapejs }}', '{{ user.first_name|escapejs }}', '{{ user.last_name|escapejs }}', {{ user.is_active|yesno:'true,false' }}, {{ user.is_staff|yesno:'true,false' }}, {{ user.userprofile.is_premium|yesno:'true,false' }}, '{{ user.userprofile.premium_until|date:"M d, Y"|default:"" }}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% if user.id != request.user.id and not user.is_superuser %}
+                        <a href="{% url 'admin_delete_user' user.id %}" class="action-btn btn-delete" title="Delete User"
+                           onclick="return confirm('Are you sure you want to delete {{ user.username }}?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+                        <p class="text-muted mb-0">No users found</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination Container -->
+        <div id="paginationContainer">
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-center py-4">
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&search={{ search_query }}&sort={{ sort_by }}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&sort={{ sort_by }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&search={{ search_query }}&sort={{ sort_by }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&sort={{ sort_by }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&search={{ search_query }}&sort={{ sort_by }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Add New User</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{% url 'admin_add_user' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="username" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" name="first_name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" name="last_name">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_active" id="newUserActive" checked>
+                                <label class="form-check-label" for="newUserActive">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_staff" id="newUserStaff">
+                                <label class="form-check-label" for="newUserStaff">Admin</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white;">
+                        <i class="fas fa-user-plus me-1"></i>Create User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal (Single reusable modal) -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Edit User</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editUserForm" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" name="username" id="editUsername" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" id="editEmail">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" name="first_name" id="editFirstName">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" name="last_name" id="editLastName">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">New Password <small class="text-muted">(leave empty to keep current)</small></label>
+                            <input type="password" class="form-control" name="password" id="editPassword">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_active" id="editIsActive">
+                                <label class="form-check-label" for="editIsActive">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_staff" id="editIsStaff">
+                                <label class="form-check-label" for="editIsStaff">Admin</label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="premiumSection">
+                            <label class="form-label"><i class="fas fa-crown text-warning me-1"></i>Premium Subscription</label>
+                            <select class="form-select" name="premium_plan" id="editPremiumPlan">
+                                <option value="">-- Keep Current --</option>
+                                <option value="0">Remove Premium (Free User)</option>
+                                {% for plan in subscription_plans %}
+                                <option value="{{ plan.id }}">{{ plan.name }} - ${{ plan.price }} ({{ plan.duration_days }} days)</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted" id="premiumHelpText">Select a plan to assign premium access to this user</small>
+                            <div id="currentPremiumInfo" class="alert alert-success mt-2 py-2 d-none">
+                                <i class="fas fa-crown me-1"></i> <span id="premiumInfoText"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" style="background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%); color: white;">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Current user ID for impersonation check
+const currentUserId = {{ request.user.id }};
+
+// Debounce function for search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Fetch users via AJAX
+async function fetchUsers(page = 1) {
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const spinner = document.getElementById('searchSpinner');
+    const tableBody = document.getElementById('usersTableBody');
+    const paginationContainer = document.getElementById('paginationContainer');
+    
+    const search = searchInput.value;
+    const sort = sortSelect.value;
+    
+    // Show spinner
+    spinner.classList.remove('d-none');
+    
+    try {
+        const response = await fetch(`/control-panel/users-ajax/?search=${encodeURIComponent(search)}&sort=${encodeURIComponent(sort)}&page=${page}`);
+        const data = await response.json();
+        
+        // Render users
+        renderUsers(data.users);
+        
+        // Render pagination
+        renderPagination(data);
+        
+        // Add fade-in animation
+        tableBody.style.opacity = '0';
+        setTimeout(() => {
+            tableBody.style.transition = 'opacity 0.3s ease';
+            tableBody.style.opacity = '1';
+        }, 50);
+        
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle text-danger mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-danger mb-0">Error loading users. Please try again.</p>
+                </td>
+            </tr>
+        `;
+    } finally {
+        // Hide spinner
+        spinner.classList.add('d-none');
+    }
+}
+
+// Render users table rows
+function renderUsers(users) {
+    const tableBody = document.getElementById('usersTableBody');
+    
+    if (users.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-muted mb-0">No users found</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    users.forEach(user => {
+        const avatar = user.profile_picture 
+            ? `<img src="${user.profile_picture}" alt="" class="user-avatar me-3">`
+            : `<div class="user-avatar-placeholder me-3">${user.username.charAt(0).toUpperCase()}</div>`;
+        
+        const superuserBadge = user.is_superuser 
+            ? '<span class="badge badge-admin ms-1">Superuser</span>' 
+            : (user.is_staff ? '<span class="badge badge-admin ms-1">Admin</span>' : '');
+        
+        const premiumBadge = user.is_premium 
+            ? '<span class="badge badge-premium ms-1"><i class="fas fa-crown me-1"></i>Premium</span>' 
+            : '';
+        
+        const statusBadge = user.is_active 
+            ? '<span class="badge badge-active"><i class="fas fa-check me-1"></i>Active</span>'
+            : '<span class="badge badge-inactive"><i class="fas fa-ban me-1"></i>Inactive</span>';
+        
+        const impersonateBtn = user.id !== currentUserId 
+            ? `<a href="/control-panel/impersonate/${user.id}/" class="action-btn btn-impersonate" title="Impersonate User"><i class="fas fa-user-secret"></i></a>`
+            : '';
+        
+        const deleteBtn = user.id !== currentUserId && !user.is_superuser 
+            ? `<a href="/control-panel/delete-user/${user.id}/" class="action-btn btn-delete" title="Delete User" onclick="return confirm('Are you sure you want to delete ${user.username}?')"><i class="fas fa-trash"></i></a>`
+            : '';
+        
+        const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+        
+        html += `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        ${avatar}
+                        <div>
+                            <strong>${escapeHtml(user.username)}</strong>
+                            ${superuserBadge}
+                            ${premiumBadge}
+                            <br>
+                            <small class="text-muted">${escapeHtml(fullName)}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>${escapeHtml(user.email) || '-'}</td>
+                <td>${statusBadge}</td>
+                <td><small>${user.date_joined}</small></td>
+                <td><small>${user.last_login || 'Never'}</small></td>
+                <td class="text-center">
+                    ${impersonateBtn}
+                    <a href="/control-panel/user/${user.id}/" class="action-btn btn-view" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <button class="action-btn btn-edit" title="Edit User" 
+                            onclick="openEditModal('${user.id}', '${escapeHtml(user.username)}', '${escapeHtml(user.email || '')}', '${escapeHtml(user.first_name || '')}', '${escapeHtml(user.last_name || '')}', ${user.is_active}, ${user.is_staff}, ${user.is_premium}, '${user.premium_until || ''}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    ${deleteBtn}
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = html;
+}
+
+// Render pagination
+function renderPagination(data) {
+    const container = document.getElementById('paginationContainer');
+    
+    if (data.total_pages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-center py-4">
+            <nav>
+                <ul class="pagination mb-0">
+    `;
+    
+    // First page button
+    if (data.has_previous) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchUsers(1); return false;">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchUsers(${data.current_page - 1}); return false;">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+        `;
+    }
+    
+    // Page numbers
+    const startPage = Math.max(1, data.current_page - 2);
+    const endPage = Math.min(data.total_pages, data.current_page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === data.current_page) {
+            html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+        } else {
+            html += `<li class="page-item"><a class="page-link" href="#" onclick="fetchUsers(${i}); return false;">${i}</a></li>`;
+        }
+    }
+    
+    // Last page button
+    if (data.has_next) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchUsers(${data.current_page + 1}); return false;">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="fetchUsers(${data.total_pages}); return false;">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+        `;
+    }
+    
+    html += `
+                </ul>
+            </nav>
+        </div>
+        <div class="text-center pb-3">
+            <small class="text-muted">
+                Showing page ${data.current_page} of ${data.total_pages} 
+                (${data.total_count} total users)
+            </small>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Debounced search handler
+const debouncedSearch = debounce(() => {
+    fetchUsers(1);
+}, 300);
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Search input - real-time filtering
+    document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+    
+    // Sort select - instant filtering
+    document.getElementById('sortSelect').addEventListener('change', function() {
+        fetchUsers(1);
+    });
+    
+    // Enter key in search
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchUsers(1);
+        }
+    });
+});
+
+// Open Edit Modal function
+function openEditModal(userId, username, email, firstName, lastName, isActive, isStaff, isPremium, premiumUntil) {
+    // Set form action URL
+    document.getElementById('editUserForm').action = '/control-panel/edit-user/' + userId + '/';
+    
+    // Populate form fields
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editFirstName').value = firstName;
+    document.getElementById('editLastName').value = lastName;
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editIsActive').checked = isActive;
+    document.getElementById('editIsStaff').checked = isStaff;
+    
+    // Handle premium section
+    var premiumSelect = document.getElementById('editPremiumPlan');
+    var premiumInfo = document.getElementById('currentPremiumInfo');
+    var premiumInfoText = document.getElementById('premiumInfoText');
+    var premiumHelpText = document.getElementById('premiumHelpText');
+    
+    premiumSelect.value = '';  // Keep current by default
+    
+    if (isPremium && premiumUntil) {
+        // User is premium - show current status
+        premiumInfo.classList.remove('d-none');
+        premiumInfoText.textContent = 'Currently Premium until ' + premiumUntil;
+        premiumHelpText.textContent = 'User already has premium. Select "Remove Premium" to revoke access.';
+    } else {
+        // User is not premium
+        premiumInfo.classList.add('d-none');
+        premiumHelpText.textContent = 'Select a plan to assign premium access to this user';
+    }
+    
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

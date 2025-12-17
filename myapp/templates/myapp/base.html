@@ -432,11 +432,40 @@
             transition: width 0.1s ease;
         }
         
+        /* Impersonation Banner */
+        .impersonation-banner {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            z-index: 9999;
+        }
+        
+        .impersonation-banner a {
+            color: white;
+            text-decoration: underline;
+            font-weight: 700;
+        }
+        
         {% block extra_css %}{% endblock %}
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <!-- Impersonation Banner -->
+    {% if request.session.impersonator_id %}
+    <div class="impersonation-banner">
+        <i class="fas fa-user-secret me-2"></i>
+        You are viewing as <strong>{{ user.username }}</strong> | 
+        <a href="{% url 'stop_impersonation' %}">
+            <i class="fas fa-times-circle me-1"></i>Stop Impersonating
+        </a>
+    </div>
+    {% endif %}
+    
     <!-- Scroll Progress Bar -->
     <div class="scroll-progress" id="scrollProgress"></div>
     
@@ -478,6 +507,14 @@
                                 <i class="fas fa-user-edit me-1"></i> Edit Profile
                             </a>
                         </li>
+                        <!-- Admin Panel Link -->
+                        {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/control-panel' in request.path %}active{% endif %}" href="{% url 'admin_dashboard' %}" style="background: rgba(239, 68, 68, 0.2); border-radius: 8px;">
+                                <i class="fas fa-shield-alt me-1"></i> Admin
+                            </a>
+                        </li>
+                        {% endif %}
                         <!-- Premium Button -->
                         <li class="nav-item">
                             {% if user.userprofile.is_premium_active %}

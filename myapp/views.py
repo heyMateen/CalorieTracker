@@ -1054,3 +1054,398 @@ def generate_shopping_list(request):
 def advanced_analytics(request):
     """Advanced analytics page - redirects to dashboard with info message"""
     return render(request, 'myapp/advanced_analytics.html')
+
+
+# ============================================
+# CUSTOM ADMIN PANEL VIEWS
+# ============================================
+
+def admin_required(view_func):
+    """Decorator to check if user is admin/superuser"""
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not (request.user.is_staff or request.user.is_superuser):
+            messages.error(request, 'You do not have permission to access this page.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@admin_required
+def admin_dashboard(request):
+    """Custom admin dashboard with user management"""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    # Get search query
+    search_query = request.GET.get('search', '')
+    sort_by = request.GET.get('sort', '-date_joined')
+    
+    # Base queryset
+    users = User.objects.select_related('userprofile').all()
+    
+    # Apply search filter
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    # Apply sorting
+    valid_sorts = ['username', '-username', 'email', '-email', 'date_joined', '-date_joined', 'last_login', '-last_login']
+    if sort_by in valid_sorts:
+        users = users.order_by(sort_by)
+    else:
+        users = users.order_by('-date_joined')
+    
+    # Pagination
+    paginator = Paginator(users, 10)  # 10 users per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Stats
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    premium_users = UserProfile.objects.filter(is_premium=True).count()
+    new_users_today = User.objects.filter(date_joined__date=timezone.now().date()).count()
+    
+    # Check if currently impersonating
+    is_impersonating = request.session.get('impersonator_id') is not None
+    
+    # Get subscription plans for premium assignment
+    subscription_plans = SubscriptionPlan.objects.filter(is_active=True)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'sort_by': sort_by,
+        'total_users': total_users,
+        'active_users': active_users,
+        'premium_users': premium_users,
+        'new_users_today': new_users_today,
+        'is_impersonating': is_impersonating,
+        'subscription_plans': subscription_plans,
+    }
+    
+    return render(request, 'myapp/admin_dashboard.html', context)
+
+
+@admin_required
+@admin_required
+def admin_users_ajax(request):
+    """AJAX endpoint for real-time user search, sort, and pagination"""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    search_query = request.GET.get('search', '')
+    sort_by = request.GET.get('sort', '-date_joined')
+    page_number = request.GET.get('page', 1)
+    
+    # Base queryset
+    users = User.objects.select_related('userprofile').all()
+    
+    # Apply search filter
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+    
+    # Apply sorting
+    valid_sorts = ['username', '-username', 'email', '-email', 'date_joined', '-date_joined', 'last_login', '-last_login']
+    if sort_by in valid_sorts:
+        users = users.order_by(sort_by)
+    else:
+        users = users.order_by('-date_joined')
+    
+    # Pagination
+    paginator = Paginator(users, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    # Build user data
+    users_data = []
+    for user in page_obj:
+        profile_pic = None
+        if hasattr(user, 'userprofile') and user.userprofile.profile_picture:
+            profile_pic = user.userprofile.profile_picture.url
+        
+        users_data.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email or '-',
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_active': user.is_active,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+            'is_premium': user.userprofile.is_premium if hasattr(user, 'userprofile') else False,
+            'premium_until': user.userprofile.premium_until.strftime('%b %d, %Y') if hasattr(user, 'userprofile') and user.userprofile.premium_until else None,
+            'date_joined': user.date_joined.strftime('%b %d, %Y'),
+            'last_login': user.last_login.strftime('%b %d, %Y %H:%M') if user.last_login else 'Never',
+            'profile_picture': profile_pic,
+        })
+    
+    return JsonResponse({
+        'users': users_data,
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+        'current_page': page_obj.number,
+        'total_pages': paginator.num_pages,
+        'total_count': paginator.count,
+    })
+
+
+@admin_required
+def admin_add_user(request):
+    """Add a new user"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        is_staff = request.POST.get('is_staff') == 'on'
+        is_active = request.POST.get('is_active', 'on') == 'on'
+        
+        # Validation
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return redirect('admin_dashboard')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists.')
+            return redirect('admin_dashboard')
+        
+        # Create user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        user.is_staff = is_staff
+        user.is_active = is_active
+        user.save()
+        
+        messages.success(request, f'User "{username}" created successfully.')
+        return redirect('admin_dashboard')
+    
+    return redirect('admin_dashboard')
+
+
+@admin_required
+def admin_edit_user(request, user_id):
+    """Edit an existing user"""
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_dashboard')
+    
+    if request.method == 'POST':
+        user.username = request.POST.get('username', user.username)
+        user.email = request.POST.get('email', user.email)
+        user.first_name = request.POST.get('first_name', '')
+        user.last_name = request.POST.get('last_name', '')
+        user.is_staff = request.POST.get('is_staff') == 'on'
+        user.is_active = request.POST.get('is_active') == 'on'
+        
+        # Update password if provided
+        new_password = request.POST.get('password', '')
+        if new_password:
+            user.set_password(new_password)
+        
+        user.save()
+        
+        # Update profile if exists
+        if hasattr(user, 'userprofile'):
+            premium_plan_id = request.POST.get('premium_plan', '')
+            
+            if premium_plan_id and premium_plan_id != '0':
+                # Assign premium with specific plan
+                try:
+                    plan = SubscriptionPlan.objects.get(id=premium_plan_id)
+                    user.userprofile.is_premium = True
+                    user.userprofile.premium_until = timezone.now() + timedelta(days=plan.duration_days)
+                    
+                    # Create a subscription purchase record
+                    SubscriptionPurchase.objects.create(
+                        user=user,
+                        plan=plan,
+                        status='active',
+                        amount=0,  # Admin assigned, no payment
+                        start_date=timezone.now(),
+                        end_date=user.userprofile.premium_until
+                    )
+                    messages.info(request, f'Assigned {plan.name} to {user.username} (expires {user.userprofile.premium_until.strftime("%Y-%m-%d")})')
+                except SubscriptionPlan.DoesNotExist:
+                    pass
+            elif premium_plan_id == '0':
+                # Remove premium
+                user.userprofile.is_premium = False
+                user.userprofile.premium_until = None
+            
+            user.userprofile.save()
+        
+        messages.success(request, f'User "{user.username}" updated successfully.')
+        return redirect('admin_dashboard')
+    
+    context = {'edit_user': user}
+    return render(request, 'myapp/admin_edit_user.html', context)
+
+
+@admin_required
+def admin_delete_user(request, user_id):
+    """Delete a user"""
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_dashboard')
+    
+    # Prevent self-deletion
+    if user.id == request.user.id:
+        messages.error(request, 'You cannot delete your own account.')
+        return redirect('admin_dashboard')
+    
+    # Prevent deleting superusers (unless you're a superuser)
+    if user.is_superuser and not request.user.is_superuser:
+        messages.error(request, 'You cannot delete a superuser.')
+        return redirect('admin_dashboard')
+    
+    username = user.username
+    user.delete()
+    messages.success(request, f'User "{username}" deleted successfully.')
+    return redirect('admin_dashboard')
+
+
+@admin_required
+def admin_toggle_user_status(request, user_id):
+    """Toggle user active status"""
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_dashboard')
+    
+    if user.id == request.user.id:
+        messages.error(request, 'You cannot deactivate your own account.')
+        return redirect('admin_dashboard')
+    
+    user.is_active = not user.is_active
+    user.save()
+    
+    status = 'activated' if user.is_active else 'deactivated'
+    messages.success(request, f'User "{user.username}" has been {status}.')
+    return redirect('admin_dashboard')
+
+
+@admin_required
+def impersonate_user(request, user_id):
+    """Start impersonating a user - like Laravel's impersonate"""
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_dashboard')
+    
+    # Can't impersonate yourself
+    if target_user.id == request.user.id:
+        messages.error(request, 'You cannot impersonate yourself.')
+        return redirect('admin_dashboard')
+    
+    # Can't impersonate superusers (security measure)
+    if target_user.is_superuser and not request.user.is_superuser:
+        messages.error(request, 'You cannot impersonate a superuser.')
+        return redirect('admin_dashboard')
+    
+    # Store the original admin user ID BEFORE login (login cycles session)
+    original_admin_id = request.user.id
+    original_admin_username = request.user.username
+    
+    # Log in as the target user
+    from django.contrib.auth import login
+    login(request, target_user, backend='django.contrib.auth.backends.ModelBackend')
+    
+    # Restore the impersonator data AFTER login (since login may cycle session)
+    request.session['impersonator_id'] = original_admin_id
+    request.session['impersonator_username'] = original_admin_username
+    request.session.modified = True
+    
+    messages.info(request, f'You are now viewing as "{target_user.username}". Click "Stop Impersonating" to return to your admin account.')
+    return redirect('dashboard')
+
+
+@login_required
+def stop_impersonation(request):
+    """Stop impersonating and return to admin account"""
+    impersonator_id = request.session.get('impersonator_id')
+    
+    if not impersonator_id:
+        messages.error(request, 'You are not currently impersonating anyone.')
+        return redirect('dashboard')
+    
+    try:
+        admin_user = User.objects.get(id=impersonator_id)
+    except User.DoesNotExist:
+        messages.error(request, 'Original admin account not found.')
+        # Clear session data
+        del request.session['impersonator_id']
+        del request.session['impersonator_username']
+        return redirect('login')
+    
+    # Clear impersonation session data
+    del request.session['impersonator_id']
+    del request.session['impersonator_username']
+    
+    # Log back in as admin
+    from django.contrib.auth import login
+    login(request, admin_user, backend='django.contrib.auth.backends.ModelBackend')
+    
+    messages.success(request, 'You have returned to your admin account.')
+    return redirect('admin_dashboard')
+
+
+@admin_required  
+def admin_user_detail(request, user_id):
+    """View detailed user information"""
+    try:
+        user = User.objects.select_related('userprofile').get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('admin_dashboard')
+    
+    # Get user stats
+    total_foods_logged = Consume.objects.filter(user=user).count()
+    total_calories = Consume.objects.filter(user=user).aggregate(
+        total=Sum('food_consumed__calories')
+    )['total'] or 0
+    
+    # Get streak info
+    try:
+        streak = UserStreak.objects.get(user=user)
+    except UserStreak.DoesNotExist:
+        streak = None
+    
+    # Get achievements
+    achievements = UserAchievement.objects.filter(user=user).select_related('achievement')
+    
+    # Get recent activity
+    recent_logs = Consume.objects.filter(user=user).order_by('-date_consumed')[:10]
+    
+    context = {
+        'view_user': user,
+        'total_foods_logged': total_foods_logged,
+        'total_calories': total_calories,
+        'streak': streak,
+        'achievements': achievements,
+        'recent_logs': recent_logs,
+    }
+    
+    return render(request, 'myapp/admin_user_detail.html', context)

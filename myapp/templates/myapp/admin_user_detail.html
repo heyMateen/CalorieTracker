@@ -1,0 +1,317 @@
+{% extends "myapp/base.html" %}
+{% block title %}User Details - {{ view_user.username }} - Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .profile-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .profile-avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        color: #4A00E0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: bold;
+        border: 4px solid white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    
+    .info-card h6 {
+        color: #8E2DE2;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .stat-box {
+        background: linear-gradient(135deg, rgba(74, 0, 224, 0.05) 0%, rgba(142, 45, 226, 0.1) 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stat-box h3 {
+        color: #4A00E0;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-box small {
+        color: #6b7280;
+    }
+    
+    .activity-item {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .activity-item:hover {
+        background: #f0f0f0;
+    }
+    
+    .achievement-badge {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        margin: 0.25rem;
+        display: inline-block;
+        font-size: 0.85rem;
+    }
+    
+    .back-btn {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .back-btn:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Profile Header -->
+    <div class="profile-header" data-aos="fade-down">
+        <a href="{% url 'admin_dashboard' %}" class="back-btn mb-3 d-inline-block">
+            <i class="fas fa-arrow-left me-2"></i>Back to Admin
+        </a>
+        <div class="row align-items-center">
+            <div class="col-auto">
+                {% if view_user.userprofile.profile_picture %}
+                <img src="{{ view_user.userprofile.profile_picture.url }}" alt="" class="profile-avatar">
+                {% else %}
+                <div class="profile-avatar-placeholder">
+                    {{ view_user.username|slice:":1"|upper }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="col">
+                <h1 class="mb-1">{{ view_user.username }}</h1>
+                <p class="mb-2 opacity-75">{{ view_user.email|default:"No email provided" }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if view_user.is_superuser %}
+                    <span class="badge" style="background: #EF4444;">Superuser</span>
+                    {% elif view_user.is_staff %}
+                    <span class="badge" style="background: #EF4444;">Admin</span>
+                    {% endif %}
+                    {% if view_user.is_active %}
+                    <span class="badge" style="background: #10B981;">Active</span>
+                    {% else %}
+                    <span class="badge" style="background: #6b7280;">Inactive</span>
+                    {% endif %}
+                    {% if view_user.userprofile.is_premium %}
+                    <span class="badge" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);"><i class="fas fa-crown me-1"></i>Premium</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'impersonate_user' view_user.id %}" class="btn btn-light">
+                    <i class="fas fa-user-secret me-2"></i>Impersonate
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-box">
+                <h3>{{ total_foods_logged }}</h3>
+                <small>Foods Logged</small>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-box">
+                <h3>{{ total_calories|floatformat:0 }}</h3>
+                <small>Total Calories</small>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+            <div class="stat-box">
+                <h3>{{ streak.current_streak|default:0 }}</h3>
+                <small>Day Streak</small>
+            </div>
+        </div>
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+            <div class="stat-box">
+                <h3>{{ achievements.count }}</h3>
+                <small>Achievements</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- User Info -->
+        <div class="col-md-6" data-aos="fade-right">
+            <div class="info-card">
+                <h6><i class="fas fa-user me-2"></i>Account Information</h6>
+                <div class="info-item">
+                    <span class="info-label">Username</span>
+                    <span class="info-value">{{ view_user.username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ view_user.email|default:"-" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Full Name</span>
+                    <span class="info-value">{{ view_user.first_name }} {{ view_user.last_name }}{% if not view_user.first_name and not view_user.last_name %}-{% endif %}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date Joined</span>
+                    <span class="info-value">{{ view_user.date_joined|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Login</span>
+                    <span class="info-value">{{ view_user.last_login|date:"F d, Y H:i"|default:"Never" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Info -->
+        <div class="col-md-6" data-aos="fade-left">
+            <div class="info-card">
+                <h6><i class="fas fa-id-card me-2"></i>Profile Details</h6>
+                <div class="info-item">
+                    <span class="info-label">Phone</span>
+                    <span class="info-value">{{ view_user.userprofile.phone_number|default:"-" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Birth</span>
+                    <span class="info-value">{{ view_user.userprofile.date_of_birth|date:"F d, Y"|default:"-" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Height</span>
+                    <span class="info-value">{% if view_user.userprofile.height %}{{ view_user.userprofile.height }} cm{% else %}-{% endif %}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Weight</span>
+                    <span class="info-value">{% if view_user.userprofile.weight %}{{ view_user.userprofile.weight }} kg{% else %}-{% endif %}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Daily Calorie Goal</span>
+                    <span class="info-value">{{ view_user.userprofile.daily_calorie_goal }} kcal</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Activity Level</span>
+                    <span class="info-value">{{ view_user.userprofile.get_activity_level_display|default:"-" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-md-6" data-aos="fade-up">
+            <div class="info-card">
+                <h6><i class="fas fa-history me-2"></i>Recent Food Logs</h6>
+                {% for log in recent_logs %}
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ log.food_consumed.name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ log.date_consumed|date:"M d, Y" }}</small>
+                        </div>
+                        <span class="badge" style="background: #4A00E0;">{{ log.food_consumed.calories }} kcal</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-utensils mb-2" style="font-size: 2rem;"></i>
+                    <p class="mb-0">No food logs yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Achievements -->
+        <div class="col-md-6" data-aos="fade-up">
+            <div class="info-card">
+                <h6><i class="fas fa-trophy me-2"></i>Achievements</h6>
+                <div class="d-flex flex-wrap">
+                    {% for ua in achievements %}
+                    <div class="achievement-badge">
+                        <i class="fas fa-medal me-1"></i>{{ ua.achievement.name }}
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted w-100">
+                        <i class="fas fa-trophy mb-2" style="font-size: 2rem;"></i>
+                        <p class="mb-0">No achievements yet</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
