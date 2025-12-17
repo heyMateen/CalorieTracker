@@ -256,19 +256,24 @@
 {% endblock %}
 
 {% block content %}
-<!-- Motivational Banner -->
-<div class="motivation-banner">
-    <div class="row align-items-center">
-        <div class="col-auto">
-            <span class="emoji">{{ motivational_data.emoji }}</span>
-        </div>
-        <div class="col">
-            <h4 class="mb-1">{{ motivational_data.title }}</h4>
-            <p class="mb-0 opacity-75">{{ motivational_data.message }}</p>
-        </div>
-        <div class="col-auto">
-            <div class="text-end">
-                <small class="d-block opacity-75">{{ motivational_data.streak_message }}</small>
+<!-- Welcome Section with Typewriter Effect -->
+<div class="row mb-4" data-aos="fade-down">
+    <div class="col-12">
+        <div class="glass-card p-4" style="background: linear-gradient(135deg, rgba(74, 0, 224, 0.1) 0%, rgba(142, 45, 226, 0.1) 100%);">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="gradient-text mb-2" style="font-weight: 800;">
+                        <span id="greeting"></span>
+                    </h2>
+                    <p class="text-muted mb-0" id="dateDisplay"></p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="inspiration-quote" style="font-style: italic; color: #6b7280;">
+                        <i class="fas fa-quote-left me-1" style="color: #8E2DE2; font-size: 0.8rem;"></i>
+                        <span id="inspirationQuote"></span>
+                        <i class="fas fa-quote-right ms-1" style="color: #8E2DE2; font-size: 0.8rem;"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -276,7 +281,7 @@
 
 <!-- Premium Status Banner -->
 <!-- Top CTA: Smart Meal Planner (single premium feature) -->
-<div class="meal-planner-banner">
+<div class="meal-planner-banner" data-aos="fade-up" data-aos-delay="200">
     <div class="d-flex align-items-center">
         <h5 class="mb-0 me-3"><i class="fas fa-utensils"></i> Smart Meal Planner</h5>
         <p class="mb-0">Create smart daily meal plans and get real-time nutrition previews</p>
@@ -292,8 +297,8 @@
     <!-- Main Stats Row with Progress Ring -->
     <div class="row g-4 mb-4">
         <!-- Animated Progress Ring -->
-        <div class="col-lg-4">
-            <div class="glass-card h-100 p-4">
+        <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="100">
+            <div class="glass-card h-100 p-4 hover-scale">
                 <h5 class="text-center mb-4"><i class="fas fa-fire-alt text-danger"></i> Daily Calorie Progress</h5>
                 <div class="progress-ring">
                     <svg width="180" height="180">
@@ -317,7 +322,7 @@
                     <div class="col-4">
                         <div class="nutrient-mini">
                             <div class="nutrient-icon" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                                🍞
+                                <i class="fas fa-bread-slice" style="color: #ef4444;"></i>
                             </div>
                             <h6 class="mb-0">{{ daily_carbs|floatformat:0 }}g</h6>
                             <small class="text-muted">Carbs</small>
@@ -326,7 +331,7 @@
                     <div class="col-4">
                         <div class="nutrient-mini">
                             <div class="nutrient-icon" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);">
-                                🥩
+                                <i class="fas fa-drumstick-bite" style="color: #3b82f6;"></i>
                             </div>
                             <h6 class="mb-0">{{ daily_protein|floatformat:0 }}g</h6>
                             <small class="text-muted">Protein</small>
@@ -335,7 +340,7 @@
                     <div class="col-4">
                         <div class="nutrient-mini">
                             <div class="nutrient-icon" style="background: linear-gradient(135deg, #fddb92 0%, #d1fdff 100%);">
-                                🥑
+                                <i class="fas fa-cheese" style="color: #f59e0b;"></i>
                             </div>
                             <h6 class="mb-0">{{ daily_fats|floatformat:0 }}g</h6>
                             <small class="text-muted">Fats</small>
@@ -346,25 +351,25 @@
         </div>
         
         <!-- Streak & Achievements -->
-        <div class="col-lg-4">
+        <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
             <!-- Streak Card -->
-            <div class="streak-card mb-3">
+            <div class="streak-card mb-3 hover-scale">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <h6 class="mb-1 opacity-75">Current Streak</h6>
-                        <h2 class="mb-0">{{ user_streak.current_streak }} Days</h2>
+                        <h2 class="mb-0"><span data-count="{{ user_streak.current_streak }}">0</span> Days</h2>
                         <small class="opacity-75">Longest: {{ user_streak.longest_streak }} days</small>
                     </div>
-                    <div class="fire-icon">🔥</div>
+                    <div class="fire-icon"><i class="fas fa-fire-flame-curved" style="color: #FFD700;"></i></div>
                 </div>
             </div>
             
             <!-- Achievement Points -->
-            <div class="glass-card p-4">
+            <div class="glass-card p-4 hover-scale">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="mb-0"><i class="fas fa-trophy text-warning"></i> Achievements</h6>
                     <div class="points-counter">
-                        <i class="fas fa-star me-1"></i> {{ total_achievement_points }} pts
+                        <i class="fas fa-star me-1"></i> <span data-count="{{ total_achievement_points }}">0</span> pts
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 justify-content-center">
@@ -393,22 +398,22 @@
         </div>
         
         <!-- Quick Actions Card -->
-        <div class="col-lg-4">
-            <div class="glass-card h-100 p-4">
+        <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="300">
+            <div class="glass-card h-100 p-4 hover-scale">
                 <div class="d-flex align-items-center mb-3">
                     <h6 class="mb-0"><i class="fas fa-bolt text-warning"></i> Quick Actions</h6>
                 </div>
                 <div class="d-grid gap-2">
-                    <a href="{% url 'add_food' %}" class="btn btn-outline-primary btn-sm">
+                    <a href="{% url 'add_food' %}" class="btn btn-outline-primary btn-sm ripple">
                         <i class="fas fa-plus-circle me-2"></i> Log Food
                     </a>
-                    <a href="{% url 'meal_planner' %}" class="btn btn-outline-success btn-sm">
+                    <a href="{% url 'meal_planner' %}" class="btn btn-outline-success btn-sm ripple">
                         <i class="fas fa-magic me-2"></i> AI Meal Planner
                     </a>
-                    <a href="{% url 'advanced_analytics' %}" class="btn btn-outline-info btn-sm">
+                    <a href="{% url 'advanced_analytics' %}" class="btn btn-outline-info btn-sm ripple">
                         <i class="fas fa-chart-bar me-2"></i> View Analytics
                     </a>
-                    <a href="{% url 'edit_profile' %}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-outline-secondary btn-sm ripple">
                         <i class="fas fa-user-edit me-2"></i> Update Profile
                     </a>
                 </div>
@@ -424,18 +429,18 @@
 
     <!-- Top Stats Cards Row -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+            <div class="card h-100 border-0 shadow-sm hover-scale neon-border">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="flex-shrink-0">
-                            <div class="stats-icon bg-primary text-white rounded-circle p-3">
+                            <div class="stats-icon bg-primary text-white rounded-circle p-3 pulse">
                                 <i class="fas fa-fire fa-lg"></i>
                             </div>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="mb-0">Daily Calories</h6>
-                            <h3 class="mb-0">{{ daily_calories }} / {{ user_profile.daily_calorie_goal }}</h3>
+                            <h3 class="mb-0"><span data-count="{{ daily_calories }}">0</span> / {{ user_profile.daily_calorie_goal }}</h3>
                         </div>
                     </div>
                     <div class="progress" style="height: 10px;">
@@ -445,8 +450,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+            <div class="card h-100 border-0 shadow-sm hover-scale neon-border">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="flex-shrink-0">
@@ -472,8 +477,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+            <div class="card h-100 border-0 shadow-sm hover-scale neon-border">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="flex-shrink-0">
@@ -490,8 +495,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card h-100 border-0 shadow-sm">
+        <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+            <div class="card h-100 border-0 shadow-sm hover-scale neon-border">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
                         <div class="flex-shrink-0">
@@ -501,7 +506,7 @@
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="mb-0">Weekly Average</h6>
-                            <h3 class="mb-0">{{ weekly_avg_calories }} kcal</h3>
+                            <h3 class="mb-0"><span data-count="{{ weekly_avg_calories }}">0</span> kcal</h3>
                         </div>
                     </div>
                     <p class="text-muted mb-0">Past 7 days</p>
@@ -512,20 +517,20 @@
 
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
+        <div class="col-md-8" data-aos="fade-right">
+            <div class="card border-0 shadow-sm hover-scale">
                 <div class="card-header bg-white border-0">
-                    <h5 class="card-title mb-0">Calorie Intake History</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-area text-primary me-2"></i>Calorie Intake History</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="calorieHistory" height="300"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm">
+        <div class="col-md-4" data-aos="fade-left">
+            <div class="card border-0 shadow-sm hover-scale">
                 <div class="card-header bg-white border-0">
-                    <h5 class="card-title mb-0">Today's Nutrients</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie text-success me-2"></i>Today's Nutrients</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="nutrientsPie" height="300"></canvas>
@@ -536,10 +541,10 @@
 
     <!-- Meals Section -->
     <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
+        <div class="col-md-6" data-aos="fade-up">
+            <div class="card border-0 shadow-sm hover-scale">
                 <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Today's Meals</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-utensils text-warning me-2"></i>Today's Meals</h5>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMealModal">
                         <i class="fas fa-plus me-1"></i> Add Meal
                     </button>
@@ -679,6 +684,69 @@
 <script>
 // ===== STUNNING ANIMATIONS =====
 
+// Greeting with Time of Day
+function updateGreeting() {
+    const hour = new Date().getHours();
+    const greetingEl = document.getElementById('greeting');
+    const user = "{{ user.first_name|default:user.username }}";
+    let greeting;
+    
+    if (hour < 12) {
+        greeting = `Good Morning, ${user}! `;
+    } else if (hour < 17) {
+        greeting = `Good Afternoon, ${user}! `;
+    } else {
+        greeting = `Good Evening, ${user}! `;
+    }
+    
+    // Typewriter effect
+    let i = 0;
+    function typeWriter() {
+        if (i < greeting.length) {
+            greetingEl.innerHTML += greeting.charAt(i);
+            i++;
+            setTimeout(typeWriter, 50);
+        }
+    }
+    typeWriter();
+}
+
+// Inspiration Quotes
+function setInspirationQuote() {
+    const quotes = [
+        "Your body is a reflection of your lifestyle.",
+        "Every healthy meal is a step toward a better you.",
+        "Small changes lead to big results.",
+        "Fuel your body with purpose.",
+        "Consistency is the key to transformation.",
+        "Eat clean, train dirty, think positive.",
+        "Your health is an investment, not an expense.",
+        "Progress, not perfection.",
+        "Strong mind, strong body.",
+        "Today's choices shape tomorrow's health.",
+        "Nourish your body, feed your soul.",
+        "Health is the greatest wealth.",
+        "You don't have to be extreme, just consistent.",
+        "Discipline is choosing between what you want now and what you want most.",
+        "Take care of your body. It's the only place you have to live."
+    ];
+    
+    const quoteEl = document.getElementById('inspirationQuote');
+    if (quoteEl) {
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        quoteEl.textContent = randomQuote;
+    }
+}
+
+// Update date display
+function updateDateDisplay() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateEl = document.getElementById('dateDisplay');
+    if (dateEl) {
+        dateEl.textContent = new Date().toLocaleDateString('en-US', options);
+    }
+}
+
 // Animate Calorie Counter
 function animateValue(element, start, end, duration) {
     let startTimestamp = null;
@@ -707,6 +775,11 @@ function animateProgressRing() {
 
 // Run animations on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize greeting
+    updateGreeting();
+    updateDateDisplay();
+    setInspirationQuote();
+    
     // Animate calorie counter
     const caloriesEl = document.getElementById('caloriesAnimated');
     animateValue(caloriesEl, 0, {{ daily_calories }}, 1500);
@@ -714,38 +787,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // Animate progress ring
     animateProgressRing();
     
+    // Animate all counters with data-count attribute
+    document.querySelectorAll('[data-count]').forEach(el => {
+        const target = parseInt(el.dataset.count);
+        animateValue(el, 0, target, 2000);
+    });
+    
     // Confetti celebration if goal is met!
     {% if goal_met %}
     setTimeout(() => {
-        // Fire confetti from both sides
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { x: 0.1, y: 0.6 }
-        });
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { x: 0.9, y: 0.6 }
-        });
+        // Epic celebration
+        const duration = 3000;
+        const end = Date.now() + duration;
+        const colors = ['#4A00E0', '#8E2DE2', '#FFD700', '#FFA500', '#FF6B6B'];
         
-        // Continuous celebration
-        setTimeout(() => {
+        (function frame() {
             confetti({
-                particleCount: 50,
+                particleCount: 5,
                 angle: 60,
                 spread: 55,
-                origin: { x: 0 }
+                origin: { x: 0 },
+                colors: colors
             });
             confetti({
-                particleCount: 50,
+                particleCount: 5,
                 angle: 120,
                 spread: 55,
-                origin: { x: 1 }
+                origin: { x: 1 },
+                colors: colors
             });
-        }, 500);
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+        
+        // Show achievement toast
+        if (typeof showToast === 'function') {
+            showToast('Congratulations! You reached your calorie goal!', 'fa-trophy', 'success');
+        }
     }, 1000);
     {% endif %}
+    
+    // Add hover sound effect (optional, commented out by default)
+    // document.querySelectorAll('.glass-card').forEach(card => {
+    //     card.addEventListener('mouseenter', () => {
+    //         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10...');
+    //         audio.volume = 0.1;
+    //         audio.play();
+    //     });
+    // });
 });
 
 // Calorie History Chart

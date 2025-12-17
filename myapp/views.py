@@ -254,36 +254,40 @@ def get_motivational_data(calorie_percentage, streak):
     
     if calorie_percentage >= 90 and calorie_percentage <= 110:
         messages = [
-            {"emoji": "🎉", "title": "Perfect Balance!", "message": "You've hit your calorie goal today. Amazing work!"},
-            {"emoji": "⭐", "title": "Goal Achieved!", "message": "Your dedication is paying off. Keep it up!"},
-            {"emoji": "🏆", "title": "Champion!", "message": "You're crushing your nutrition goals today!"},
+            {"icon": "fa-party-horn", "title": "Perfect Balance!", "message": "You've hit your calorie goal today. Amazing work!"},
+            {"icon": "fa-star", "title": "Goal Achieved!", "message": "Your dedication is paying off. Keep it up!"},
+            {"icon": "fa-trophy", "title": "Champion!", "message": "You're crushing your nutrition goals today!"},
         ]
     elif calorie_percentage >= 70:
         messages = [
-            {"emoji": "💪", "title": "Almost There!", "message": f"Just {100-calorie_percentage:.0f}% more to reach your goal!"},
-            {"emoji": "🔥", "title": "Great Progress!", "message": "You're on fire! Keep going!"},
+            {"icon": "fa-dumbbell", "title": "Almost There!", "message": f"Just {100-calorie_percentage:.0f}% more to reach your goal!"},
+            {"icon": "fa-fire", "title": "Great Progress!", "message": "You're on fire! Keep going!"},
         ]
     elif calorie_percentage >= 40:
         messages = [
-            {"emoji": "🌟", "title": "Good Start!", "message": "You're making progress. Time for a healthy meal!"},
-            {"emoji": "💫", "title": "Keep Going!", "message": "Every bite counts towards your goal!"},
+            {"icon": "fa-bolt", "title": "Good Start!", "message": "You're making progress. Time for a healthy meal!"},
+            {"icon": "fa-rocket", "title": "Keep Going!", "message": "Every bite counts towards your goal!"},
         ]
     else:
         messages = [
-            {"emoji": "🌅", "title": "New Day, New Goals!", "message": "Start your healthy journey today!"},
-            {"emoji": "🚀", "title": "Ready to Go!", "message": "Log your first meal to get started!"},
+            {"icon": "fa-sun", "title": "New Day, New Goals!", "message": "Start your healthy journey today!"},
+            {"icon": "fa-rocket", "title": "Ready to Go!", "message": "Log your first meal to get started!"},
         ]
     
     result = random.choice(messages)
     
     if streak >= 7:
-        result["streak_message"] = f"🔥 {streak} day streak! You're unstoppable!"
+        result["streak_message"] = f"{streak} day streak! You're unstoppable!"
+        result["streak_icon"] = "fa-fire-flame-curved"
     elif streak >= 3:
-        result["streak_message"] = f"⚡ {streak} days in a row! Keep the momentum!"
+        result["streak_message"] = f"{streak} days in a row! Keep the momentum!"
+        result["streak_icon"] = "fa-bolt"
     elif streak >= 1:
-        result["streak_message"] = f"✨ {streak} day streak started! Build the habit!"
+        result["streak_message"] = f"{streak} day streak started! Build the habit!"
+        result["streak_icon"] = "fa-sparkles"
     else:
         result["streak_message"] = "Start your streak today by logging a meal!"
+        result["streak_icon"] = "fa-play"
     
     return result
 

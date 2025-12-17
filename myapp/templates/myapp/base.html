@@ -1,6 +1,6 @@
 {% load custom_filters %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,13 +10,44 @@
     <link rel="apple-touch-icon" href="/media/assets/calorie_trackor_favicon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
+            --secondary-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --text-muted: #718096;
         }
+        
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-color: #e2e8f0;
+            --text-muted: #a0aec0;
+        }
+        
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+        
+
+        
         .navbar {
             box-shadow: 0 4px 12px rgba(0,0,0,.1);
             background: linear-gradient(135deg, #4A00E0 0%, #8E2DE2 100%);
@@ -145,11 +176,274 @@
                 padding: 0.5rem !important;
             }
         }
+        
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(74, 0, 224, 0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+        
+        /* Floating Action Button */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        .fab-main {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--secondary-gradient);
+            border: none;
+            color: #2d3748;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fab-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 165, 0, 0.6);
+        }
+        .fab-main.active {
+            transform: rotate(45deg);
+        }
+        .fab-options {
+            position: absolute;
+            bottom: 70px;
+            right: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .fab-options.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .fab-option {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid #8E2DE2;
+            color: #8E2DE2;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        .fab-option:hover {
+            background: var(--primary-gradient);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            z-index: 9999;
+        }
+        .custom-toast {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.5s ease, fadeOut 0.5s ease 4.5s forwards;
+            margin-bottom: 10px;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-theme="dark"] .glass-card {
+            background: rgba(22, 33, 62, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Pulse Animation for important elements */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(142, 45, 226, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(142, 45, 226, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(142, 45, 226, 0); }
+        }
+        
+        /* Shimmer Loading Effect */
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Typewriter Effect */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 3s steps(30, end);
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        /* Glow Effect */
+        .glow {
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #8E2DE2, 0 0 10px #8E2DE2, 0 0 15px #8E2DE2; }
+            to { box-shadow: 0 0 10px #4A00E0, 0 0 20px #4A00E0, 0 0 30px #4A00E0; }
+        }
+        
+        /* Hover Scale */
+        .hover-scale {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Ripple Effect */
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .ripple:active::after {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Neon Border */
+        .neon-border {
+            border: 2px solid transparent;
+            background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+                        var(--primary-gradient) border-box;
+        }
+        
+        /* Bounce Animation */
+        .bounce {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+
+        
+        /* Page Fade In */
+        .page-content {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            z-index: 99999;
+            transition: width 0.1s ease;
+        }
+        
+        {% block extra_css %}{% endblock %}
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <div class="container-fluid px-0">
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <div class="container-fluid px-0 page-content">
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container">
                 <a class="navbar-brand" href="{% url 'dashboard' %}">
@@ -233,5 +527,200 @@
     </div>
 
     {% block extra_js %}{% endblock %}
+    
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+    
+    <!-- Floating Action Button -->
+    {% if user.is_authenticated %}
+    <div class="fab-container">
+        <div class="fab-options" id="fabOptions">
+            <a href="{% url 'index' %}" class="fab-option" title="Track Food">
+                <i class="fas fa-utensils"></i>
+            </a>
+            <a href="{% url 'add_food' %}" class="fab-option" title="Add Food">
+                <i class="fas fa-plus"></i>
+            </a>
+            <a href="{% url 'dashboard' %}" class="fab-option" title="Dashboard">
+                <i class="fas fa-chart-line"></i>
+            </a>
+        </div>
+        <button class="fab-main" id="fabMain" title="Quick Actions">
+            <i class="fas fa-bolt"></i>
+        </button>
+    </div>
+    {% endif %}
+    
+    <script>
+        // Scroll Progress Bar
+        window.addEventListener('scroll', function() {
+            const scrollProgress = document.getElementById('scrollProgress');
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = (scrollTop / docHeight) * 100;
+            scrollProgress.style.width = scrollPercent + '%';
+        });
+        
+        // Initialize AOS (Animate on Scroll)
+        AOS.init({
+            duration: 800,
+            easing: 'ease-out-cubic',
+            once: true,
+            offset: 50
+        });
+        
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+            
+            // Show toast notification
+            showToast(newTheme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled', 
+                      newTheme === 'dark' ? 'fa-moon' : 'fa-sun');
+        });
+        
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        
+        // Floating Action Button
+        const fabMain = document.getElementById('fabMain');
+        const fabOptions = document.getElementById('fabOptions');
+        
+        if (fabMain) {
+            fabMain.addEventListener('click', () => {
+                fabMain.classList.toggle('active');
+                fabOptions.classList.toggle('show');
+            });
+        }
+        
+        // Toast Notification System
+        function showToast(message, icon = 'fa-check-circle', type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            
+            const colors = {
+                success: '#10B981',
+                error: '#EF4444',
+                warning: '#F59E0B',
+                info: '#3B82F6'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icon}" style="color: ${colors[type]}; font-size: 1.25rem;"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        // Celebration Effect
+        function celebrate() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+            
+            const colors = ['#4A00E0', '#8E2DE2', '#FFD700', '#FFA500'];
+            
+            (function frame() {
+                confetti({
+                    particleCount: 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+        
+        // Smooth scroll for all anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Add ripple effect to buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.classList.add('ripple');
+        });
+        
+        // Counter Animation
+        function animateCounter(element, target, duration = 2000) {
+            let start = 0;
+            const increment = target / (duration / 16);
+            
+            function update() {
+                start += increment;
+                if (start < target) {
+                    element.textContent = Math.floor(start);
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = target;
+                }
+            }
+            update();
+        }
+        
+        // Initialize counters when they come into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = parseInt(entry.target.dataset.count);
+                    if (target) {
+                        animateCounter(entry.target, target);
+                        observer.unobserve(entry.target);
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
+        
+        // Welcome message on first visit
+        if (!sessionStorage.getItem('welcomed') && document.querySelector('.welcome-text')) {
+            setTimeout(() => {
+                showToast('Welcome back! Ready to track your nutrition?', 'fa-hand-wave', 'info');
+                sessionStorage.setItem('welcomed', 'true');
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
