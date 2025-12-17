@@ -29,6 +29,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     path('signup/', views.signup, name='signup'),
     path('add-food/', views.add_food, name='add_food'),
+    path('delete-food/<int:food_id>/', views.delete_food, name='delete_food'),
     path('add-meal/', views.add_meal, name='add_meal'),
     path('log-weight/', views.log_weight, name='log_weight'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),

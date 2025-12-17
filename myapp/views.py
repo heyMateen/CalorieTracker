@@ -56,13 +56,13 @@ def index(request):
     if not request.user.is_authenticated:
         return redirect('login')  # Redirect to your login page
 
-    foods = Food.objects.all()
+    foods = Food.objects.filter(user=request.user)
     
     if request.method == "POST":
         food_consumed = request.POST.get('food_consumed')
         if food_consumed:
             try:
-                consume = Food.objects.get(name=food_consumed)
+                consume = Food.objects.get(name=food_consumed, user=request.user)
                 Consume.objects.create(user=request.user, food_consumed=consume)
                 return redirect('index')  # Redirect after successful POST
             except Food.DoesNotExist:
@@ -121,8 +121,8 @@ def dashboard(request):
     # AI Meal Suggestions based on remaining calories
     meal_suggestions = []
     if remaining_calories > 0:
-        # Get foods that fit within remaining calories
-        suitable_foods = Food.objects.filter(calories__lte=remaining_calories).order_by('?')[:3]
+        # Get foods that fit within remaining calories (user's foods only)
+        suitable_foods = Food.objects.filter(user=request.user, calories__lte=remaining_calories).order_by('?')[:3]
         for food in suitable_foods:
             meal_suggestions.append({
                 'food': food,
@@ -209,7 +209,7 @@ def dashboard(request):
         'weight_history_dates': weight_history_dates,
         'weight_history_values': weight_history_values,
         'daily_meals': daily_meals,
-        'foods': Food.objects.all(),
+        'foods': Food.objects.filter(user=request.user),
         'today': today,
         # New stunning features
         'goal_met': goal_met,
@@ -293,7 +293,7 @@ def add_meal(request):
         servings = float(request.POST.get('servings', 1))
         
         try:
-            food = Food.objects.get(id=food_id)
+            food = Food.objects.get(id=food_id, user=request.user)
             Consume.objects.create(
                 user=request.user,
                 food_consumed=food,
@@ -446,11 +446,12 @@ def add_food(request):
         calories = request.POST.get('calories')
         
         try:
-            # Check if food item already exists
-            if Food.objects.filter(name=name).exists():
-                messages.error(request, f'Food item "{name}" already exists.')
+            # Check if food item already exists for this user
+            if Food.objects.filter(name=name, user=request.user).exists():
+                messages.error(request, f'Food item "{name}" already exists in your database.')
             else:
                 Food.objects.create(
+                    user=request.user,
                     name=name,
                     carbs=carbs,
                     protein=protein,
@@ -462,9 +463,29 @@ def add_food(request):
         except Exception as e:
             messages.error(request, f'Error adding food item: {str(e)}')
     
-    # Get all food items for display
-    foods = Food.objects.all().order_by('name')
-    return render(request, 'myapp/add_food.html', {'foods': foods})
+    # Get all food items for this user (JavaScript-based filtering/sorting)
+    foods = Food.objects.filter(user=request.user).order_by('name')
+    
+    context = {
+        'foods': foods,
+        'total_foods': foods.count(),
+    }
+    return render(request, 'myapp/add_food.html', context)
+
+
+@login_required
+def delete_food(request, food_id):
+    """Delete a food item from the database"""
+    try:
+        food = Food.objects.get(id=food_id, user=request.user)
+        food_name = food.name
+        food.delete()
+        messages.success(request, f'Food item "{food_name}" has been deleted successfully!')
+    except Food.DoesNotExist:
+        messages.error(request, 'Food item not found or you do not have permission to delete it.')
+    except Exception as e:
+        messages.error(request, f'Error deleting food item: {str(e)}')
+    return redirect('add_food')
 
 
 # ============================================================
@@ -752,8 +773,8 @@ def meal_planner(request):
                 'protein_priority': False
             }
         
-        # Get suitable foods based on criteria
-        suitable_foods = Food.objects.filter(calories__lte=suggestion_criteria['calorie_limit'])
+        # Get suitable foods based on criteria (user's foods only)
+        suitable_foods = Food.objects.filter(user=request.user, calories__lte=suggestion_criteria['calorie_limit'])
         
         if suggestion_criteria['protein_priority']:
             suitable_foods = suitable_foods.order_by('-protein', 'calories')[:8]
@@ -874,7 +895,7 @@ def meal_planner(request):
         'nutrition_summary': nutrition_summary,
         'calorie_percentage': calorie_percentage,
         'meal_types': MealPlan.MEAL_TYPES,
-        'all_foods': Food.objects.all().order_by('name'),
+        'all_foods': Food.objects.filter(user=request.user).order_by('name'),
         # Month navigation
         'month_name': month_name,
         'current_week_num': current_week_num,
@@ -905,7 +926,7 @@ def add_meal_plan(request):
         
         try:
             date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            food = Food.objects.get(id=food_id)
+            food = Food.objects.get(id=food_id, user=request.user)
             
             # Get or create MealPlan for this user, date, and meal_type
             meal_plan, created = MealPlan.objects.get_or_create(

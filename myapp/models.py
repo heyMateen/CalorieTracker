@@ -13,6 +13,7 @@ MEAL_TYPE_CHOICES = [
 ]
 
 class Food(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='foods')
     name = models.CharField(max_length=100)
     carbs = models.FloatField()
     protein = models.FloatField()
