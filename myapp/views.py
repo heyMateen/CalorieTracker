@@ -57,6 +57,7 @@ def index(request):
         return redirect('login')  # Redirect to your login page
 
     foods = Food.objects.filter(user=request.user)
+    today = timezone.now().date()
     
     if request.method == "POST":
         food_consumed = request.POST.get('food_consumed')
@@ -68,7 +69,8 @@ def index(request):
             except Food.DoesNotExist:
                 pass  # Handle the case where the food item doesn't exist
         
-    consumed_food = Consume.objects.filter(user=request.user)
+    # Only show today's consumption
+    consumed_food = Consume.objects.filter(user=request.user, date_consumed=today)
     return render(request, 'myapp/index.html', {'foods': foods, 'consumed_food': consumed_food})
 
 
@@ -79,11 +81,11 @@ def delete_consume(request, id):
     consumed_food = Consume.objects.get(id=id)
     # Make sure the user owns this consume object
     if consumed_food.user != request.user:
-        return redirect('/')
+        return redirect('index')
         
     if request.method == 'POST':
         consumed_food.delete()
-        return redirect('/')
+        return redirect('index')
     return render(request, 'myapp/delete.html')
 
 @login_required
@@ -97,10 +99,10 @@ def dashboard(request):
         date_consumed=today
     ).select_related('food_consumed')
     
-    daily_calories = sum(consume.food_consumed.calories * consume.servings for consume in today_consumption)
-    daily_carbs = sum(consume.food_consumed.carbs * consume.servings for consume in today_consumption)
-    daily_protein = sum(consume.food_consumed.protein * consume.servings for consume in today_consumption)
-    daily_fats = sum(consume.food_consumed.fats * consume.servings for consume in today_consumption)
+    daily_calories = sum(consume.food_consumed.calories for consume in today_consumption)
+    daily_carbs = sum(consume.food_consumed.carbs for consume in today_consumption)
+    daily_protein = sum(consume.food_consumed.protein for consume in today_consumption)
+    daily_fats = sum(consume.food_consumed.fats for consume in today_consumption)
     
     # Calculate calorie percentage
     calorie_percentage = min((daily_calories / user_profile.daily_calorie_goal * 100), 100)

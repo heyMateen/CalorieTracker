@@ -320,6 +320,9 @@ class UserStreak(models.Model):
         """Update streak based on new food log"""
         if not log_date:
             log_date = timezone.now().date()
+        # Ensure log_date is a date object, not datetime
+        elif hasattr(log_date, 'date'):
+            log_date = log_date.date()
         
         if self.last_log_date:
             days_diff = (log_date - self.last_log_date).days

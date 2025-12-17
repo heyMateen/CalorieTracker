@@ -79,9 +79,13 @@
                                 <td class="text-center">{{c.food_consumed.fats}}</td>
                                 <td class="text-center">{{c.food_consumed.calories}}</td>
                                 <td class="text-center">
-                                    <a class="btn btn-danger btn-sm" href="{% url 'delete' c.pk %}">
+                                    <button class="btn btn-danger btn-sm" type="button" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal"
+                                            data-delete-url="{% url 'delete' c.pk %}"
+                                            data-food-name="{{ c.food_consumed.name }}">
                                         <i class="fas fa-trash-alt"></i>
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -115,11 +119,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to remove <strong id="deleteFoodName"></strong> from today's consumption?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <form id="deleteForm" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Delete modal handling
+        var deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                var button = event.relatedTarget;
+                var deleteUrl = button.getAttribute('data-delete-url');
+                var foodName = button.getAttribute('data-food-name');
+                
+                document.getElementById('deleteFoodName').textContent = foodName;
+                document.getElementById('deleteForm').setAttribute('action', deleteUrl);
+            });
+        }
+
         var table = document.getElementById("table");
         var carbs = 0, protein = 0, fats = 0, calories = 0;
 
