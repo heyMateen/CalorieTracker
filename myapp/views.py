@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
 import logging
-from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, SubscriptionPlan, SubscriptionPurchase, PaymentLog, MealPlan, MealPlanItem
+from .models import Food, Consume, UserProfile, WeightLog, MEAL_TYPE_CHOICES, SubscriptionPlan, SubscriptionPurchase, PaymentLog, MealPlan, MealPlanItem, UserStreak, Achievement, UserAchievement
 from .forms import SignUpForm
 from django.db.models.functions import TruncDate
 from .subscription import (
@@ -105,6 +105,33 @@ def dashboard(request):
     # Calculate calorie percentage
     calorie_percentage = min((daily_calories / user_profile.daily_calorie_goal * 100), 100)
     
+    # Check if goal met (for confetti)
+    goal_met = daily_calories >= user_profile.daily_calorie_goal * 0.9 and daily_calories <= user_profile.daily_calorie_goal * 1.1
+    
+    # Get or create user streak
+    user_streak, created = UserStreak.objects.get_or_create(user=request.user)
+    
+    # Get user achievements
+    user_achievements = UserAchievement.objects.filter(user=request.user).select_related('achievement')[:6]
+    total_achievement_points = sum(ua.achievement.points for ua in user_achievements)
+    
+    # Calculate remaining calories and suggest foods
+    remaining_calories = max(0, user_profile.daily_calorie_goal - daily_calories)
+    
+    # AI Meal Suggestions based on remaining calories
+    meal_suggestions = []
+    if remaining_calories > 0:
+        # Get foods that fit within remaining calories
+        suitable_foods = Food.objects.filter(calories__lte=remaining_calories).order_by('?')[:3]
+        for food in suitable_foods:
+            meal_suggestions.append({
+                'food': food,
+                'reason': get_suggestion_reason(food, remaining_calories, daily_protein, daily_carbs, daily_fats)
+            })
+    
+    # Motivational quote based on progress
+    motivational_data = get_motivational_data(calorie_percentage, user_streak.current_streak)
+    
     # Get latest weight and BMI
     # First try to get weight from weight log, otherwise use profile weight
     latest_weight = WeightLog.objects.filter(user=request.user).order_by('-date').first()
@@ -125,6 +152,8 @@ def dashboard(request):
     
     # Get weekly average calories
     week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+    
     weekly_consumption = Consume.objects.filter(
         user=request.user,
         date_consumed__gte=week_ago
@@ -134,15 +163,23 @@ def dashboard(request):
     
     weekly_avg_calories = sum(day['daily_total'] for day in weekly_consumption) / 7 if weekly_consumption else 0
     
-    # Prepare data for charts
-    calorie_history = list(weekly_consumption)
+    # Prepare data for charts - show last 14 days for better visualization
+    two_weeks_ago = today - timedelta(days=14)
+    calorie_history_data = Consume.objects.filter(
+        user=request.user,
+        date_consumed__gte=two_weeks_ago
+    ).values('date_consumed').annotate(
+        daily_total=Sum('food_consumed__calories')
+    ).order_by('date_consumed')
+    
+    calorie_history = list(calorie_history_data)
     calorie_history_dates = [entry['date_consumed'].strftime('%b %d') for entry in calorie_history]
     calorie_history_values = [entry['daily_total'] for entry in calorie_history]
     
-    # Get weight history
+    # Get weight history - show last 30 days
     weight_history = WeightLog.objects.filter(
         user=request.user,
-        date__gte=week_ago
+        date__gte=month_ago
     ).order_by('date')
     weight_history_dates = [entry.date.strftime('%b %d') for entry in weight_history]
     weight_history_values = [entry.weight for entry in weight_history]
@@ -174,9 +211,79 @@ def dashboard(request):
         'daily_meals': daily_meals,
         'foods': Food.objects.all(),
         'today': today,
+        # New stunning features
+        'goal_met': goal_met,
+        'user_streak': user_streak,
+        'user_achievements': user_achievements,
+        'total_achievement_points': total_achievement_points,
+        'remaining_calories': remaining_calories,
+        'meal_suggestions': meal_suggestions,
+        'motivational_data': motivational_data,
     }
     
     return render(request, 'myapp/dashboard.html', context)
+
+
+def get_suggestion_reason(food, remaining_calories, daily_protein, daily_carbs, daily_fats):
+    """Generate AI-like reason for food suggestion"""
+    reasons = []
+    
+    if food.protein > 15:
+        reasons.append("High in protein 💪")
+    if food.calories < 200:
+        reasons.append("Low calorie option 🥗")
+    if food.fiber > 5 if hasattr(food, 'fiber') and food.fiber else False:
+        reasons.append("Rich in fiber 🌾")
+    if food.carbs < 20:
+        reasons.append("Low carb friendly 🥑")
+    
+    if not reasons:
+        if food.calories <= remaining_calories * 0.3:
+            reasons.append("Perfect light snack ✨")
+        else:
+            reasons.append("Balanced nutrition 🎯")
+    
+    return reasons[0] if reasons else "Great choice! 👍"
+
+
+def get_motivational_data(calorie_percentage, streak):
+    """Generate motivational message based on progress"""
+    import random
+    
+    if calorie_percentage >= 90 and calorie_percentage <= 110:
+        messages = [
+            {"emoji": "🎉", "title": "Perfect Balance!", "message": "You've hit your calorie goal today. Amazing work!"},
+            {"emoji": "⭐", "title": "Goal Achieved!", "message": "Your dedication is paying off. Keep it up!"},
+            {"emoji": "🏆", "title": "Champion!", "message": "You're crushing your nutrition goals today!"},
+        ]
+    elif calorie_percentage >= 70:
+        messages = [
+            {"emoji": "💪", "title": "Almost There!", "message": f"Just {100-calorie_percentage:.0f}% more to reach your goal!"},
+            {"emoji": "🔥", "title": "Great Progress!", "message": "You're on fire! Keep going!"},
+        ]
+    elif calorie_percentage >= 40:
+        messages = [
+            {"emoji": "🌟", "title": "Good Start!", "message": "You're making progress. Time for a healthy meal!"},
+            {"emoji": "💫", "title": "Keep Going!", "message": "Every bite counts towards your goal!"},
+        ]
+    else:
+        messages = [
+            {"emoji": "🌅", "title": "New Day, New Goals!", "message": "Start your healthy journey today!"},
+            {"emoji": "🚀", "title": "Ready to Go!", "message": "Log your first meal to get started!"},
+        ]
+    
+    result = random.choice(messages)
+    
+    if streak >= 7:
+        result["streak_message"] = f"🔥 {streak} day streak! You're unstoppable!"
+    elif streak >= 3:
+        result["streak_message"] = f"⚡ {streak} days in a row! Keep the momentum!"
+    elif streak >= 1:
+        result["streak_message"] = f"✨ {streak} day streak started! Build the habit!"
+    else:
+        result["streak_message"] = "Start your streak today by logging a meal!"
+    
+    return result
 
 @login_required
 def add_meal(request):

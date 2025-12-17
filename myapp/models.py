@@ -305,3 +305,79 @@ class PaymentLog(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.transaction_type} - ${self.amount}"
+
+
+class UserStreak(models.Model):
+    """Track user's consecutive logging streaks"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='streak')
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_log_date = models.DateField(null=True, blank=True)
+    total_days_logged = models.IntegerField(default=0)
+    
+    def update_streak(self, log_date=None):
+        """Update streak based on new food log"""
+        if not log_date:
+            log_date = timezone.now().date()
+        
+        if self.last_log_date:
+            days_diff = (log_date - self.last_log_date).days
+            
+            if days_diff == 0:
+                # Same day, no change
+                return
+            elif days_diff == 1:
+                # Consecutive day
+                self.current_streak += 1
+            else:
+                # Streak broken
+                self.current_streak = 1
+        else:
+            self.current_streak = 1
+        
+        self.last_log_date = log_date
+        self.total_days_logged += 1
+        
+        if self.current_streak > self.longest_streak:
+            self.longest_streak = self.current_streak
+        
+        self.save()
+    
+    def __str__(self):
+        return f"{self.user.username}'s Streak: {self.current_streak} days"
+
+
+class Achievement(models.Model):
+    """Achievement definitions"""
+    ACHIEVEMENT_TYPES = [
+        ('streak', 'Streak Achievement'),
+        ('logging', 'Logging Achievement'),
+        ('nutrition', 'Nutrition Achievement'),
+        ('weight', 'Weight Achievement'),
+        ('special', 'Special Achievement'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.CharField(max_length=50, default='fa-trophy')  # FontAwesome icon
+    color = models.CharField(max_length=20, default='#FFD700')  # Badge color
+    achievement_type = models.CharField(max_length=20, choices=ACHIEVEMENT_TYPES)
+    requirement_value = models.IntegerField(default=1)  # e.g., 7 for "7-day streak"
+    points = models.IntegerField(default=10)
+    
+    def __str__(self):
+        return self.name
+
+
+class UserAchievement(models.Model):
+    """Track achievements earned by users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'achievement']
+        ordering = ['-earned_at']
+    
+    def __str__(self):
+        return f"{self.user.username} earned {self.achievement.name}"
