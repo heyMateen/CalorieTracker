@@ -61,6 +61,11 @@
                                 <div class="form-text">Enter your height in centimeters</div>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Weight (kg)</label>
+                                <input type="number" name="weight" class="form-control" value="{{ user_profile.weight|default:'' }}" step="0.1" min="0" required>
+                                <div class="form-text">Enter your weight in kilograms</div>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">Date of Birth</label>
                                 <input type="date" name="date_of_birth" class="form-control" value="{{ user_profile.date_of_birth|date:'Y-m-d'|default:'' }}">
                             </div>

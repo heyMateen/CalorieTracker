@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
@@ -105,8 +106,10 @@ def dashboard(request):
     calorie_percentage = min((daily_calories / user_profile.daily_calorie_goal * 100), 100)
     
     # Get latest weight and BMI
+    # First try to get weight from weight log, otherwise use profile weight
     latest_weight = WeightLog.objects.filter(user=request.user).order_by('-date').first()
-    current_bmi = user_profile.calculate_bmi(latest_weight.weight if latest_weight else None)
+    current_weight = latest_weight.weight if latest_weight else user_profile.weight
+    current_bmi = user_profile.calculate_bmi(current_weight)
     
     # Determine BMI category
     bmi_category = None
@@ -246,6 +249,7 @@ def edit_profile(request):
             last_name = request.POST.get('last_name')
             phone_number = request.POST.get('phone_number')
             height = request.POST.get('height')
+            weight = request.POST.get('weight')
             date_of_birth = request.POST.get('date_of_birth')
             activity_level = request.POST.get('activity_level')
             weight_goal = request.POST.get('weight_goal')
@@ -277,6 +281,7 @@ def edit_profile(request):
                 # Store original values
                 original_values = {
                     'height': user_profile.height,
+                    'weight': user_profile.weight,
                     'date_of_birth': user_profile.date_of_birth,
                     'activity_level': user_profile.activity_level,
                     'weight_goal': user_profile.weight_goal,
@@ -285,6 +290,7 @@ def edit_profile(request):
                 
                 # Set new values
                 user_profile.height = float(height) if height else None
+                user_profile.weight = float(weight) if weight else None
                 user_profile.date_of_birth = date_of_birth if date_of_birth else None
                 user_profile.activity_level = activity_level
                 user_profile.weight_goal = weight_goal
@@ -293,6 +299,7 @@ def edit_profile(request):
                 # Check if any values changed (including picture)
                 new_values = {
                     'height': user_profile.height,
+                    'weight': user_profile.weight,
                     'date_of_birth': user_profile.date_of_birth,
                     'activity_level': user_profile.activity_level,
                     'weight_goal': user_profile.weight_goal,
@@ -602,19 +609,78 @@ def meal_planner(request):
     # Calculate calorie progress percentage
     calorie_percentage = min((nutrition_summary['total_calories'] / user_profile.daily_calorie_goal * 100), 100) if user_profile.daily_calorie_goal > 0 else 0
     
-    # Generate dates for the weekly bar (current week)
+    # Get today's date and calculate the current month boundaries
     today = timezone.now().date()
-    start_of_week = current_date - timedelta(days=current_date.weekday())
+    
+    # Calculate the first and last day of the current month
+    first_day_of_month = today.replace(day=1)
+    # Get the last day of the month
+    if today.month == 12:
+        last_day_of_month = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        last_day_of_month = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # Ensure current_date is within the current month (restrict to current month only)
+    if current_date < first_day_of_month:
+        current_date = first_day_of_month
+    elif current_date > last_day_of_month:
+        current_date = last_day_of_month
+    
+    # Get the week offset from the first week of the month
+    week_offset = request.GET.get('week', None)
+    
+    # Calculate which week of the month to show
+    if week_offset is not None:
+        try:
+            week_offset = int(week_offset)
+        except ValueError:
+            week_offset = 0
+    else:
+        # Calculate which week the current_date falls into
+        days_from_start = (current_date - first_day_of_month).days
+        week_offset = days_from_start // 7
+    
+    # Calculate start of the selected week
+    start_of_week = first_day_of_month + timedelta(days=week_offset * 7)
+    
+    # Ensure we don't go before the start of the month
+    if start_of_week < first_day_of_month:
+        start_of_week = first_day_of_month
+        week_offset = 0
+    
+    # Calculate the maximum week offset (number of weeks in the month)
+    total_days_in_month = (last_day_of_month - first_day_of_month).days + 1
+    max_week_offset = (total_days_in_month - 1) // 7
+    
+    # Ensure week_offset doesn't exceed maximum
+    if week_offset > max_week_offset:
+        week_offset = max_week_offset
+        start_of_week = first_day_of_month + timedelta(days=week_offset * 7)
+    
+    # Generate dates for the weekly bar (7 days from start_of_week, but only within current month)
     week_dates = []
     for i in range(7):
         day = start_of_week + timedelta(days=i)
-        week_dates.append({
-            'date': day,
-            'day_name': day.strftime('%a'),
-            'day_num': day.day,
-            'is_today': day == today,
-            'is_selected': day == current_date
-        })
+        # Only include days within the current month
+        if day <= last_day_of_month:
+            week_dates.append({
+                'date': day,
+                'day_name': day.strftime('%a'),
+                'day_num': day.day,
+                'is_today': day == today,
+                'is_selected': day == current_date
+            })
+    
+    # Calculate navigation info
+    has_prev_week = week_offset > 0
+    has_next_week = week_offset < max_week_offset
+    prev_week = week_offset - 1 if has_prev_week else None
+    next_week = week_offset + 1 if has_next_week else None
+    
+    # Month info for display
+    month_name = today.strftime('%B %Y')
+    current_week_num = week_offset + 1
+    total_weeks = max_week_offset + 1
 
     context = {
         'user_profile': user_profile,
@@ -625,6 +691,17 @@ def meal_planner(request):
         'calorie_percentage': calorie_percentage,
         'meal_types': MealPlan.MEAL_TYPES,
         'all_foods': Food.objects.all().order_by('name'),
+        # Month navigation
+        'month_name': month_name,
+        'current_week_num': current_week_num,
+        'total_weeks': total_weeks,
+        'week_offset': week_offset,
+        'has_prev_week': has_prev_week,
+        'has_next_week': has_next_week,
+        'prev_week': prev_week,
+        'next_week': next_week,
+        'first_day_of_month': first_day_of_month,
+        'last_day_of_month': last_day_of_month,
     }
     
     return render(request, 'myapp/meal_planner.html', context)

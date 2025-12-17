@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Calorie Tracker{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/media/assets/calorie_tracker_favicon.jpg">
+    <link rel="apple-touch-icon" href="/media/assets/calorie_tracker_favicon.jpg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -42,6 +45,17 @@
         .nav-link:hover {
             background: rgba(255,255,255,0.1);
             color: white !important;
+        }
+        .nav-link.active {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000 !important;
+            font-weight: bold;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(255, 165, 0, 0.4);
+        }
+        .nav-link.active:hover {
+            background: linear-gradient(135deg, #FFC000 0%, #FF8C00 100%);
+            color: #000 !important;
         }
         /* Ensure navbar items are vertically centered and compact */
         .navbar .navbar-nav {
@@ -160,13 +174,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'add_food' %}">
+                            <a class="nav-link {% if request.path == '/add-food/' %}active{% endif %}" href="{% url 'add_food' %}">
                                 <i class="fas fa-plus-circle me-1"></i> Add Food
                             </a>
                         </li>
                         <!-- Premium features condensed: single premium badge/button handled below -->
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'edit_profile' %}">
+                            <a class="nav-link {% if request.path == '/profile/edit/' %}active{% endif %}" href="{% url 'edit_profile' %}">
                                 <i class="fas fa-user-edit me-1"></i> Edit Profile
                             </a>
                         </li>

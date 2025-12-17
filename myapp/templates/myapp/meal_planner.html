@@ -76,6 +76,18 @@
     .day-card.active.today {
         border-color: #0056b3;
     }
+    .month-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+    }
+    .week-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
 </style>
 {% endblock %}
 
@@ -92,10 +104,49 @@
         </div>
     </div>
 
+    <!-- Month Header with Week Navigation -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0 text-primary">
+                        <i class="fas fa-calendar-check me-2"></i>{{ month_name }}
+                    </h4>
+                    <small class="text-muted">Plan your meals for the entire month</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if has_prev_week %}
+                    <a href="?week={{ prev_week }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-chevron-left"></i> Prev Week
+                    </a>
+                    {% else %}
+                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                        <i class="fas fa-chevron-left"></i> Prev Week
+                    </button>
+                    {% endif %}
+                    
+                    <span class="badge bg-primary px-3 py-2">
+                        Week {{ current_week_num }} of {{ total_weeks }}
+                    </span>
+                    
+                    {% if has_next_week %}
+                    <a href="?week={{ next_week }}" class="btn btn-outline-primary btn-sm">
+                        Next Week <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <button class="btn btn-outline-secondary btn-sm" disabled>
+                        Next Week <i class="fas fa-chevron-right"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Weekly Navigation -->
     <div class="week-nav">
         {% for day in week_dates %}
-        <a href="?date={{ day.date|date:'Y-m-d' }}" class="day-card {% if day.is_selected %}active{% endif %} {% if day.is_today %}today{% endif %}">
+        <a href="?date={{ day.date|date:'Y-m-d' }}&week={{ week_offset }}" class="day-card {% if day.is_selected %}active{% endif %} {% if day.is_today %}today{% endif %}">
             <div class="small text-uppercase">{{ day.day_name }}</div>
             <div class="h4 mb-0">{{ day.day_num }}</div>
         </a>

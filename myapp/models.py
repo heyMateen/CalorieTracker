@@ -49,6 +49,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     date_of_birth = models.DateField(null=True, blank=True)
     height = models.FloatField(help_text="Height in cm", null=True, blank=True)
+    weight = models.FloatField(help_text="Weight in kg", null=True, blank=True)
     activity_level = models.CharField(max_length=20, choices=ACTIVITY_CHOICES, default='moderate')
     weight_goal = models.CharField(max_length=10, choices=GOAL_CHOICES, default='maintain')
     daily_calorie_goal = models.IntegerField(default=2000)
