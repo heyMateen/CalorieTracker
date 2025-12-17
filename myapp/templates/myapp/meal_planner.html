@@ -88,6 +88,229 @@
         border-radius: 20px;
         font-weight: 500;
     }
+    
+    /* AI Button Styling */
+    .ai-magic-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    .ai-magic-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+    .ai-magic-btn::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: rotate(45deg);
+        animation: aiShimmer 2s infinite;
+    }
+    @keyframes aiShimmer {
+        0% { transform: translateX(-100%) rotate(45deg); }
+        100% { transform: translateX(100%) rotate(45deg); }
+    }
+    .ai-magic-btn i {
+        animation: aiPulse 1.5s infinite;
+    }
+    @keyframes aiPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+    
+    /* AI Modal Styling */
+    .ai-modal .modal-content {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    }
+    .ai-modal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 25px 30px;
+        position: relative;
+    }
+    .ai-modal .modal-header::after {
+        content: '🤖';
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 3rem;
+        opacity: 0.3;
+    }
+    .ai-modal .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: 0.8;
+    }
+    .ai-modal .modal-body {
+        padding: 30px;
+    }
+    
+    /* AI Suggestion Cards */
+    .ai-suggestion-item {
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        border: 2px solid transparent;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    .ai-suggestion-item:nth-child(1) { animation-delay: 0.1s; }
+    .ai-suggestion-item:nth-child(2) { animation-delay: 0.2s; }
+    .ai-suggestion-item:nth-child(3) { animation-delay: 0.3s; }
+    .ai-suggestion-item:nth-child(4) { animation-delay: 0.4s; }
+    .ai-suggestion-item:nth-child(5) { animation-delay: 0.5s; }
+    .ai-suggestion-item:nth-child(6) { animation-delay: 0.6s; }
+    
+    @keyframes slideIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .ai-suggestion-item:hover {
+        border-color: #667eea;
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+    }
+    .ai-suggestion-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #667eea, #764ba2);
+        border-radius: 4px 0 0 4px;
+    }
+    
+    .ai-tag {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .macro-pills {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .macro-pill {
+        background: #f0f4ff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .macro-pill.protein { color: #22c55e; }
+    .macro-pill.carbs { color: #f59e0b; }
+    .macro-pill.fats { color: #ef4444; }
+    .macro-pill.calories { color: #3b82f6; }
+    
+    /* AI Loading Animation */
+    .ai-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+    }
+    .ai-brain {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        animation: brainPulse 1s infinite;
+    }
+    @keyframes brainPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+        50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(102, 126, 234, 0); }
+    }
+    .ai-loading-dots {
+        display: flex;
+        gap: 8px;
+    }
+    .ai-loading-dots span {
+        width: 12px;
+        height: 12px;
+        background: #667eea;
+        border-radius: 50%;
+        animation: dotBounce 1.4s infinite ease-in-out;
+    }
+    .ai-loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .ai-loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes dotBounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+    
+    /* Goal Badge */
+    .goal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .goal-badge.lose { background: #fef3c7; color: #d97706; }
+    .goal-badge.gain { background: #dcfce7; color: #16a34a; }
+    .goal-badge.maintain { background: #dbeafe; color: #2563eb; }
+    
+    /* Add to Plan Button in Modal */
+    .add-from-ai-btn {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s ease;
+    }
+    .add-from-ai-btn:hover {
+        transform: scale(1.05);
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -287,11 +510,115 @@
                     <hr>
                     
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-info btn-sm" type="button">
-                            <i class="fas fa-magic"></i> AI Suggest Meal (Coming Soon)
+                        <button class="ai-magic-btn w-100" type="button" data-bs-toggle="modal" data-bs-target="#aiSuggestionModal" onclick="showAISuggestions()">
+                            <i class="fas fa-magic"></i> 
+                            <span>AI Suggest Meal</span>
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Suggestion Modal -->
+<div class="modal fade ai-modal" id="aiSuggestionModal" tabindex="-1" aria-labelledby="aiSuggestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h4 class="modal-title mb-1" id="aiSuggestionModalLabel">
+                        <i class="fas fa-robot me-2"></i>AI Meal Suggestions
+                    </h4>
+                    <p class="mb-0 opacity-75 small">Personalized recommendations based on your profile</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- User Profile Summary -->
+                <div class="d-flex flex-wrap gap-3 mb-4 align-items-center justify-content-center">
+                    <div class="goal-badge {% if user_profile.weight_goal == 'lose' %}lose{% elif user_profile.weight_goal == 'gain' %}gain{% else %}maintain{% endif %}">
+                        <i class="fas {% if user_profile.weight_goal == 'lose' %}fa-arrow-down{% elif user_profile.weight_goal == 'gain' %}fa-arrow-up{% else %}fa-balance-scale{% endif %}"></i>
+                        {% if user_profile.weight_goal == 'lose' %}Weight Loss{% elif user_profile.weight_goal == 'gain' %}Weight Gain{% else %}Maintenance{% endif %}
+                    </div>
+                    <div class="macro-pill calories">
+                        <i class="fas fa-fire me-1"></i>{{ remaining_calories|floatformat:0 }} kcal remaining
+                    </div>
+                    <div class="macro-pill">
+                        <i class="fas fa-bullseye me-1"></i>Goal: {{ user_profile.daily_calorie_goal }} kcal
+                    </div>
+                </div>
+                
+                <!-- AI Loading State -->
+                <div id="aiLoadingState" class="ai-loading">
+                    <div class="ai-brain">🧠</div>
+                    <h5 class="mb-3">Analyzing your nutrition profile...</h5>
+                    <div class="ai-loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+                
+                <!-- AI Suggestions List -->
+                <div id="aiSuggestionsList" style="display: none;">
+                    {% if suggestion_criteria %}
+                    <div class="alert alert-light border-0 mb-4" style="background: linear-gradient(135deg, #f0f4ff 0%, #fff 100%); border-radius: 12px;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-lightbulb text-warning fa-2x me-3"></i>
+                            <div>
+                                <strong>AI Focus: {{ suggestion_criteria.focus }}</strong>
+                                <p class="mb-0 small text-muted">Based on your goal, we recommend these foods to optimize your nutrition.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ai_suggestions %}
+                        {% for suggestion in ai_suggestions %}
+                        <div class="ai-suggestion-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <h5 class="mb-0">{{ suggestion.food.name }}</h5>
+                                        <span class="ai-tag">{{ suggestion.reason }}</span>
+                                    </div>
+                                    <p class="text-muted small mb-2">
+                                        Suggested: <strong>{{ suggestion.servings }} serving(s)</strong>
+                                    </p>
+                                    <div class="macro-pills">
+                                        <span class="macro-pill calories">🔥 {{ suggestion.total_calories }} kcal</span>
+                                        <span class="macro-pill protein">💪 {{ suggestion.total_protein }}g protein</span>
+                                        <span class="macro-pill carbs">🍞 {{ suggestion.total_carbs }}g carbs</span>
+                                        <span class="macro-pill fats">🥑 {{ suggestion.total_fats }}g fats</span>
+                                    </div>
+                                </div>
+                                <form method="POST" action="{% url 'add_meal_plan' %}" class="ms-3">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="date" value="{{ current_date|date:'Y-m-d' }}">
+                                    <input type="hidden" name="food_consumed" value="{{ suggestion.food.id }}">
+                                    <input type="hidden" name="servings" value="{{ suggestion.servings }}">
+                                    <input type="hidden" name="meal_type" value="lunch">
+                                    <button type="submit" class="add-from-ai-btn">
+                                        <i class="fas fa-plus me-1"></i> Add
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle fa-4x text-success"></i>
+                            </div>
+                            <h4>Great job! 🎉</h4>
+                            <p class="text-muted">You've planned enough calories for today or have reached your goal!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -326,5 +653,37 @@
     
     foodSelect.addEventListener('change', updatePreview);
     servingsInput.addEventListener('input', updatePreview);
+    
+    // AI Suggestion Loading Animation
+    function showAISuggestions() {
+        const loadingState = document.getElementById('aiLoadingState');
+        const suggestionsList = document.getElementById('aiSuggestionsList');
+        
+        // Show loading, hide suggestions
+        loadingState.style.display = 'flex';
+        suggestionsList.style.display = 'none';
+        
+        // Simulate AI "thinking" with a delay for dramatic effect
+        setTimeout(() => {
+            loadingState.style.display = 'none';
+            suggestionsList.style.display = 'block';
+            
+            // Trigger animations by re-adding items
+            const items = document.querySelectorAll('.ai-suggestion-item');
+            items.forEach((item, index) => {
+                item.style.animation = 'none';
+                item.offsetHeight; // Trigger reflow
+                item.style.animation = `slideIn 0.5s ease forwards ${index * 0.1}s`;
+            });
+        }, 1500);
+    }
+    
+    // Reset modal state when it's closed
+    document.getElementById('aiSuggestionModal').addEventListener('hidden.bs.modal', function () {
+        const loadingState = document.getElementById('aiLoadingState');
+        const suggestionsList = document.getElementById('aiSuggestionsList');
+        loadingState.style.display = 'flex';
+        suggestionsList.style.display = 'none';
+    });
 </script>
 {% endblock %}

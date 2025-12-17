@@ -716,6 +716,83 @@ def meal_planner(request):
     # Calculate calorie progress percentage
     calorie_percentage = min((nutrition_summary['total_calories'] / user_profile.daily_calorie_goal * 100), 100) if user_profile.daily_calorie_goal > 0 else 0
     
+    # Calculate remaining calories and macros for AI suggestions
+    remaining_calories = user_profile.daily_calorie_goal - nutrition_summary['total_calories']
+    
+    # AI Meal Suggestions based on user profile and remaining calories
+    ai_suggestions = []
+    suggestion_criteria = None
+    if remaining_calories > 50:
+        # Get user's weight goal and profile info for personalized suggestions
+        weight_goal = user_profile.weight_goal
+        
+        # Define suggestion criteria based on weight goal
+        if weight_goal == 'lose':
+            # For weight loss: suggest high protein, low calorie foods
+            suggestion_criteria = {
+                'type': 'weight_loss',
+                'focus': 'High Protein, Low Calorie',
+                'calorie_limit': min(remaining_calories, 500),
+                'protein_priority': True
+            }
+        elif weight_goal == 'gain':
+            # For weight gain: suggest calorie-dense, high protein foods
+            suggestion_criteria = {
+                'type': 'weight_gain',
+                'focus': 'High Calorie, High Protein',
+                'calorie_limit': remaining_calories,
+                'protein_priority': True
+            }
+        else:
+            # For maintenance: balanced nutrition
+            suggestion_criteria = {
+                'type': 'maintenance',
+                'focus': 'Balanced Nutrition',
+                'calorie_limit': remaining_calories,
+                'protein_priority': False
+            }
+        
+        # Get suitable foods based on criteria
+        suitable_foods = Food.objects.filter(calories__lte=suggestion_criteria['calorie_limit'])
+        
+        if suggestion_criteria['protein_priority']:
+            suitable_foods = suitable_foods.order_by('-protein', 'calories')[:8]
+        else:
+            suitable_foods = suitable_foods.order_by('-calories')[:8]
+        
+        for food in suitable_foods:
+            # Calculate optimal servings
+            if food.calories > 0:
+                optimal_servings = min(remaining_calories / food.calories, 3)
+                optimal_servings = round(optimal_servings * 2) / 2  # Round to nearest 0.5
+                if optimal_servings >= 0.5:
+                    # Generate AI reasoning
+                    reasons = []
+                    if food.protein >= 15:
+                        reasons.append("High protein")
+                    if food.calories <= 200:
+                        reasons.append("Low calorie")
+                    if food.protein > 0 and food.calories / food.protein <= 20:
+                        reasons.append("Protein efficient")
+                    if food.carbs <= 20:
+                        reasons.append("Low carb")
+                    if not reasons:
+                        reasons.append("Balanced")
+                    
+                    ai_suggestions.append({
+                        'food': food,
+                        'servings': optimal_servings,
+                        'total_calories': int(food.calories * optimal_servings),
+                        'total_protein': round(food.protein * optimal_servings, 1),
+                        'total_carbs': round(food.carbs * optimal_servings, 1),
+                        'total_fats': round(food.fats * optimal_servings, 1),
+                        'reason': reasons[0],
+                        'all_reasons': reasons
+                    })
+        
+        # Limit to top 6 suggestions
+        ai_suggestions = ai_suggestions[:6]
+    
     # Get today's date and calculate the current month boundaries
     today = timezone.now().date()
     
@@ -809,6 +886,10 @@ def meal_planner(request):
         'next_week': next_week,
         'first_day_of_month': first_day_of_month,
         'last_day_of_month': last_day_of_month,
+        # AI Suggestions
+        'ai_suggestions': ai_suggestions,
+        'remaining_calories': remaining_calories,
+        'suggestion_criteria': suggestion_criteria,
     }
     
     return render(request, 'myapp/meal_planner.html', context)
@@ -940,3 +1021,9 @@ def generate_shopping_list(request):
     }
     
     return render(request, 'myapp/shopping_list.html', context)
+
+
+@login_required
+def advanced_analytics(request):
+    """Advanced analytics page - redirects to dashboard with info message"""
+    return render(request, 'myapp/advanced_analytics.html')

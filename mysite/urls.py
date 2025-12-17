@@ -47,6 +47,7 @@ urlpatterns = [
     path('meal-planner/log/<int:plan_id>/', views.log_meal_plan, name='log_meal_plan'),
     path('meal-planner/delete/<int:item_id>/', views.delete_meal_plan_item, name='delete_meal_plan_item'),
     path('meal-planner/shopping-list/', views.generate_shopping_list, name='generate_shopping_list'),
+    path('analytics/', views.advanced_analytics, name='advanced_analytics'),
     
     # Password Reset URLs
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='myapp/password_reset_form.html'), name='password_reset'),
